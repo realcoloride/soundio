@@ -11,10 +11,10 @@ protected:
     inline AudioNode* inputNode = nullptr;
     inline AudioNode* outputNode = nullptr;
 
-    virtual ma_result handleInputSubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
-    virtual ma_result handleOutputSubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
-    virtual ma_result handleInputUnsubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
-    virtual ma_result handleOutputUnsubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
+    virtual ma_result handleInputSubscribe(AudioNode*) { return MA_SUCCESS; }
+    virtual ma_result handleOutputSubscribe(AudioNode*) { return MA_SUCCESS; }
+    virtual ma_result handleInputUnsubscribe(AudioNode*) { return MA_SUCCESS; }
+    virtual ma_result handleOutputUnsubscribe(AudioNode*) { return MA_SUCCESS; }
 
     bool isInputSubscribed() { return inputNode != nullptr; }
     bool isOutputSubscribed() { return outputNode != nullptr; }
@@ -100,9 +100,7 @@ protected:
     }
 
     virtual bool isSubscribed() { return false; }
-    virtual ma_result subscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
-    virtual ma_result unsubscribe() { return MA_NOT_IMPLEMENTED; }
-
+    
     void unsubscribeAll() {
         this->unsubscribeInput();
         this->unsubscribeOutput();

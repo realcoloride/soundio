@@ -8,13 +8,18 @@ protected:
         (void)pDevice;
         (void)pInput;
 
+        if (!inputNode || !isAwake) return;
+        
         // here I'd pull audio from the connected input node into `pOutput`
-        if (inputNode) {
-            // example: inputNode->fillOutputBuffer(pOutput, frameCount);
-        }
     }
 
 public:
+    ma_result handleSubscribe() override {
+
+    }
+
+
+    bool isSubscribed() override { return isInputSubscribed(); }
     ma_result subscribe(AudioNode* audioNode) override { return subscribeInput(audioNode); }
     ma_result unsubscribe() override { return unsubscribeInput(); }
 };

@@ -128,13 +128,13 @@ public:
 
     // creating inputs, outputs etc
     // input
-    static AudioDeviceInput* createInputFromDevice() {
+    static AudioDeviceInput* createDeviceInput() {
 
     }
-    static AudioFileInput* createInputFromFile() {
+    static AudioFileInput* createFileInput() {
 
     }
-    static AudioStreamInput* createInputFromStream() {
+    static AudioStreamInput* createStreamInput() {
 
     }
 
