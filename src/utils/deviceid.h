@@ -1,6 +1,6 @@
 #pragma once
-#include <include.h>
-#include <utils/wcharconvert.h>
+#include "../include.h"
+#include "./wcharconvert.h"
 
 constexpr size_t MAX_DEVICE_ID_BUFFER = 512;
 

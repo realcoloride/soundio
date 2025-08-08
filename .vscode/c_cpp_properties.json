@@ -1,0 +1,18 @@
+{
+  "version": 4,
+  "configurations": [
+    {
+      "name": "Win64-Mingw",
+      "compilerPath": "C:/mingw64/bin/g++.exe",
+      "intelliSenseMode": "windows-gcc-x64",
+      "cStandard": "c17",
+      "cppStandard": "c++20",
+      "includePath": [
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/lib",
+        "${workspaceFolder}/**"
+      ],
+      "defines": ["SOUNDIO_IMPLEMENTATION=1"] 
+    }
+  ]
+}

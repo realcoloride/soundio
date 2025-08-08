@@ -1,6 +1,6 @@
 #pragma once
-#include <include.h>
-#include <utils/deviceid.h>
+#include "../include.h"
+#include "./deviceid.h"
 
 static void loopDevices(
     ma_context& context, ma_device_info* devices, ma_uint32 deviceCount, ma_device_type deviceType,

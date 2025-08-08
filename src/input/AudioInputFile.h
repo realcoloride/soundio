@@ -1,6 +1,6 @@
 #pragma once
 
-#include <input/AudioInput.h>
+#include "./AudioInput.h"
 
 class AudioInputFile : public AudioInput {
 	

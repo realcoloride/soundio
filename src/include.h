@@ -4,11 +4,8 @@
 #pragma once
 
 /* MINIAUDIO */
-#include "../lib/miniaudio.h"
-
-/* NAPI */
-// temporary (but nasty) fix for me to debug properly
-#include <napi.h>
+#define MINIAUDIO_IMPLEMENTATION 
+#include "./miniaudio.h"
 
 /* STD */
 #include <stdio.h>

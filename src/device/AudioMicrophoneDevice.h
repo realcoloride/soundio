@@ -1,6 +1,6 @@
 #pragma once
 
-#include <device/AudioDevice.h>
+#include "./AudioDevice.h"
 
 class AudioMicrophoneDevice : public AudioDevice {
 	
