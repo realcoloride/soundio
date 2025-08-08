@@ -1,21 +1,40 @@
 #pragma once
 
-#include "include.h"
-#include "utils/deviceid.h"
-#include "utils/deviceloops.h"
-
-#include "input/AudioInput.h"
-#include "input/AudioInputFile.h"
-#include "input/AudioInputStream.h"
-#include "input/AudioDeviceInput.h"
-
-#include "device/AudioDevice.h"
-#include "device/AudioMicrophoneDevice.h"
-#include "device/AudioSpeakerDevice.h"
-
-#include "player/AudioPlayer.h"
-
 #define SOUNDIO_VERSION constexpr 100
+
+#include "./include.h"
+
+// core
+#include "./core/AudioFormat.h"
+
+// device
+#include "./device/AudioDevice.h"
+#include "./device/AudioMicrophoneDevice.h"
+#include "./device/AudioSpeakerDevice.h"
+
+// input
+#include "./input/AudioInput.h"
+#include "./input/AudioFileInput.h"
+#include "./input/AudioStreamInput.h"
+#include "./input/AudioDeviceInput.h"
+
+// mixer
+#include "./mixer/AudioCombiner.h"
+#include "./mixer/AudioPipe.h"
+#include "./mixer/AudioResampler.h"
+
+// output
+#include "./output/AudioOutput.h"
+#include "./output/AudioDeviceOutput.h"
+#include "./output/AudioFileOutput.h"
+#include "./output/AudioStreamOutput.h"
+
+// player
+#include "./player/AudioPlayer.h"
+
+// utils
+#include "./utils/deviceid.h"
+#include "./utils/deviceloops.h"
 
 class SoundIO {
 private:
@@ -126,30 +145,71 @@ public:
         return defaultSpeakerId.empty() ? nullptr : dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultSpeakerId));
     }
 
+protected:
+    static inline std::vector<std::unique_ptr<AudioNode>> nodes;
+
+    static void clearAllNodes() {
+        nodes.clear(); // unique_ptr cleanup happens automatically
+    }
+
+    template <typename T, typename... Args>
+    static T* registerNode(Args&&... args) {
+        static_assert(std::is_base_of<AudioNode, T>::value,
+            "T must derive from AudioNode");
+
+        auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+        T* raw = ptr.get();
+        nodes.push_back(std::move(ptr)); // nodes = std::vector<std::unique_ptr<AudioNode>>
+        return raw;
+    }
+
+public:
+
     // creating inputs, outputs etc
     // input
-    static AudioDeviceInput* createDeviceInput() {
-
+    static AudioDeviceInput* createDeviceInput(AudioMicrophoneDevice* microphone) {
+        auto* input = registerNode<AudioDeviceInput>();
+        microphone->subscribe(input);
+        return input;
     }
-    static AudioFileInput* createFileInput() {
-
+    static AudioFileInput* createFileInput(const std::string& path) {
+        auto* input = registerNode<AudioFileInput>();
+        input->open(path);
+        // todo
+        return input;
     }
-    static AudioStreamInput* createStreamInput() {
-
+    static AudioStreamInput* createStreamInput(AudioFormat format) {
+        auto* input = registerNode<AudioStreamInput>();
+        // todo
+        return input;
     }
 
     // mixer
-    static AudioCombiner* createAudioCombiner() {
-    
+    static AudioCombiner* createCombiner(AudioInput* input = nullptr, AudioOutput* device = nullptr) {
+        
     }
-    static AudioResampler* createAudioResampler() {
+    static AudioResampler* createResampler(AudioFormat outputFormat, AudioInput* input = nullptr) {
+
+    }
+    static AudioPipe* createPipe() {
 
     }
 
     // output
+    static AudioDeviceOutput* createDeviceOutput(AudioSpeakerDevice* speaker) {
 
+    }
+    static AudioFileOutput* createFileOutput() {
+
+    }
+    static AudioStreamOutput* createStreamOutput() {
+
+    }
 
     // player
+    static AudioPlayer* createAudioPlayer() {
+
+    }
 };
 
 inline ma_result SoundIO::initialize() {

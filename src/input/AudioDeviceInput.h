@@ -4,7 +4,7 @@
 #include "AudioInput.h"
 
 class AudioDeviceInput : public AudioInput {
-    ma_pcm_rb ringBuffer{};
+    ma_pcm_rb ringBuffer{}; 
 
 protected:
     ma_result handleInputSubscribe(AudioNode* source) override {
