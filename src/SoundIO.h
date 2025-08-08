@@ -15,7 +15,7 @@
 
 #include "player/AudioPlayer.h"
 
-#define SOUNDIO_VERSION 100
+#define SOUNDIO_VERSION constexpr 100
 
 class SoundIO {
 private:
@@ -35,8 +35,8 @@ private:
         return pDevice == nullptr ? MA_INVALID_ARGS : refreshDevices();
     }
 
-    static inline std::string defaultCaptureDeviceId = "";
-    static inline std::string defaultPlaybackDeviceId = "";
+    static inline std::string defaultMicrophoneId = "";
+    static inline std::string defaultSpeakerId = "";
 
     template <typename T, typename = std::enable_if_t<std::is_base_of<AudioDevice, T>::value>>
     static void handleDeviceLoop(
@@ -119,12 +119,37 @@ public:
     }
 
     static AudioMicrophoneDevice* getDefaultMicrophone() {
-        return defaultCaptureDeviceId.empty() ? nullptr : dynamic_cast<AudioMicrophoneDevice*>(getDeviceById(defaultCaptureDeviceId));
+        return defaultMicrophoneId.empty() ? nullptr : dynamic_cast<AudioMicrophoneDevice*>(getDeviceById(defaultMicrophoneId));
     }
 
     static AudioSpeakerDevice* getDefaultSpeaker() {
-        return defaultPlaybackDeviceId.empty() ? nullptr : dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultPlaybackDeviceId));
+        return defaultSpeakerId.empty() ? nullptr : dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultSpeakerId));
     }
+
+    // creating inputs, outputs etc
+    // input
+    static AudioDeviceInput* createInputFromDevice() {
+
+    }
+    static AudioFileInput* createInputFromFile() {
+
+    }
+    static AudioStreamInput* createInputFromStream() {
+
+    }
+
+    // mixer
+    static AudioCombiner* createAudioCombiner() {
+    
+    }
+    static AudioResampler* createAudioResampler() {
+
+    }
+
+    // output
+
+
+    // player
 };
 
 inline ma_result SoundIO::initialize() {
@@ -146,22 +171,22 @@ inline ma_result SoundIO::initialize() {
 }
 
 inline ma_result SoundIO::refreshDevices() {
-    ma_device_info* playbackDevices;
-    ma_uint32 playbackCount;
-    ma_device_info* captureDevices;
-    ma_uint32 captureCount;
+    ma_device_info* speakers;
+    ma_uint32 speakerCount;
+    ma_device_info* microphones;
+    ma_uint32 microphoneCount;
 
-    ma_context_get_devices(&context, &playbackDevices, &playbackCount, &captureDevices, &captureCount);
+    ma_context_get_devices(&context, &speakers, &speakerCount, &microphones, &microphoneCount);
 
     ma_result result = MA_SUCCESS;
 
-    AudioMicrophoneDevice* defaultCaptureDevice = nullptr;
-    AudioSpeakerDevice* defaultPlaybackDevice = nullptr;
+    AudioMicrophoneDevice* defaultMicrophone = nullptr;
+    AudioSpeakerDevice* defaultSpeaker = nullptr;
 
     idToDevices.clear();
 
-    loopDevices(context, playbackDevices, playbackCount, ma_device_type_playback,
-        [&result, &defaultPlaybackDevice]
+    loopDevices(context, speakers, speakerCount, ma_device_type_playback,
+        [&result, &defaultSpeaker]
         (ma_device_info deviceInfo, std::string normalizedDeviceId, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
             auto creationCallback = [&normalizedDeviceId, &result, &deviceInfo, channels, sampleRate]() -> std::unique_ptr<AudioSpeakerDevice> {
                 return std::make_unique<AudioSpeakerDevice>(normalizedDeviceId);
@@ -169,22 +194,34 @@ inline ma_result SoundIO::refreshDevices() {
 
             handleDeviceLoop<AudioSpeakerDevice>(
                 deviceInfo, normalizedDeviceId, format, sampleRate, channels,
-                defaultPlaybackDevice, creationCallback
+                defaultSpeaker, creationCallback
             );
         }
     );
 
     if (result != MA_SUCCESS) return result;
 
-    // TODO handling microphones soon!
+    loopDevices(context, microphones, microphoneCount, ma_device_type_capture,
+        [&result, &defaultMicrophone]
+        (ma_device_info deviceInfo, std::string normalizedDeviceId, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
+            auto creationCallback = [&normalizedDeviceId, &result, &deviceInfo, channels, sampleRate]() -> std::unique_ptr<AudioMicrophoneDevice> {
+                return std::make_unique<AudioMicrophoneDevice>(normalizedDeviceId);
+            };
+
+            handleDeviceLoop<AudioMicrophoneDevice>(
+                deviceInfo, normalizedDeviceId, format, sampleRate, channels,
+                defaultMicrophone, creationCallback
+            );
+        }
+    );
 
     if (result != MA_SUCCESS) return result;
 
     // reset if the default devices no longer exist
-    if (defaultPlaybackDevice)
-        defaultPlaybackDeviceId = defaultPlaybackDevice->id;
-    if (defaultCaptureDevice)
-        defaultCaptureDeviceId = defaultCaptureDevice->id;
+    if (defaultSpeaker)
+        defaultSpeakerId = defaultSpeaker->id;
+    if (defaultMicrophone)
+        defaultMicrophoneId = defaultMicrophone->id;
 
     return result;
 }

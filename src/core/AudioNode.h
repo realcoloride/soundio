@@ -1,58 +1,112 @@
-#pragma once
+﻿#pragma once
 
 #include "../include.h"
+#include "./AudioNode.h"
 
 class AudioNode {
 protected:
-    std::vector<AudioNode*> connectedNodes;
+    using IsSubscribedMethod = bool (AudioNode::*)();
+    using HandleMethod = ma_result(AudioNode::*)(AudioNode*);
 
-    virtual ma_result canSubscribe(AudioNode* audioNode) { return MA_NOT_IMPLEMENTED; }
-    virtual ma_result handleSubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
-    virtual ma_result handleUnsubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
+    inline AudioNode* inputNode = nullptr;
+    inline AudioNode* outputNode = nullptr;
 
-public:
-    bool isSubscribed(AudioNode* audioNode) {
-        return std::find(connectedNodes.begin(), connectedNodes.end(), audioNode) != connectedNodes.end();
-    }
+    virtual ma_result handleInputSubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
+    virtual ma_result handleOutputSubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
+    virtual ma_result handleInputUnsubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
+    virtual ma_result handleOutputUnsubscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
 
-    ma_result subscribe(AudioNode* audioNode) {
-        ma_result subscribeResult = canSubscribe(audioNode);
-        if (subscribeResult != MA_SUCCESS)
-            return subscribeResult;
+    bool isInputSubscribed() { return inputNode != nullptr; }
+    bool isOutputSubscribed() { return outputNode != nullptr; }
 
-        subscribeResult = audioNode->canSubscribe(this);
-        if (subscribeResult != MA_SUCCESS)
-            return subscribeResult;
-
-        if (this->isSubscribed(audioNode))
+    ma_result _subscribe(
+        AudioNode*& audioNode,
+        IsSubscribedMethod isSubscribedMethod,
+        HandleMethod handleMethod,
+        AudioNode* otherNode,
+        HandleMethod otherHandleMethod
+    ) {
+        if ((this->*isSubscribedMethod)())
             return MA_DEVICE_ALREADY_INITIALIZED;
 
-        subscribeResult = handleSubscribe(audioNode);
-        if (subscribeResult != MA_SUCCESS)
-            return subscribeResult;
-
-        connectedNodes.push_back(audioNode);
-
-        return MA_SUCCESS;
-    }
-
-    ma_result unsubscribe(AudioNode* audioNode) {
-        auto it = std::find(connectedNodes.begin(), connectedNodes.end(), audioNode);
-        if (it == connectedNodes.end())
-            return MA_DEVICE_NOT_INITIALIZED;
-
-        ma_result result = handleUnsubscribe(audioNode);
+        ma_result result = (this->*handleMethod)(otherNode);
         if (result != MA_SUCCESS)
             return result;
 
-        connectedNodes.erase(it);
+        if (otherNode) {
+            (otherNode->*otherHandleMethod)(this);
+        }
+
+        audioNode = otherNode;
+        if (otherNode) {
+            if (&audioNode == &inputNode)
+                otherNode->outputNode = this;
+            else
+                otherNode->inputNode = this;
+        }
+
         return MA_SUCCESS;
     }
 
-    void unsubscribeAll() {
-        for (auto* node : connectedNodes) {
-            handleUnsubscribe(node);
+    ma_result _unsubscribe(
+        AudioNode*& audioNode,
+        IsSubscribedMethod isSubscribedMethod,
+        HandleMethod handleMethod
+    ) {
+        if (!(this->*isSubscribedMethod)())
+            return MA_DEVICE_NOT_INITIALIZED;
+
+        ma_result result = (this->*handleMethod)(audioNode);
+        if (result != MA_SUCCESS)
+            return result;
+
+        if (audioNode) {
+            if (audioNode->outputNode == this)
+                audioNode->unsubscribeOutput();
+            if (audioNode->inputNode == this)
+                audioNode->unsubscribeInput();
         }
-        connectedNodes.clear();
+
+        audioNode = nullptr;
+        return MA_SUCCESS;
     }
+
+    ma_result subscribeInput(AudioNode* source) {
+        return _subscribe(inputNode,
+            &AudioNode::isInputSubscribed,
+            &AudioNode::handleInputSubscribe,
+            source,
+            &AudioNode::handleOutputSubscribe);
+    }
+
+    ma_result subscribeOutput(AudioNode* destination) {
+        return _subscribe(outputNode,
+            &AudioNode::isOutputSubscribed,
+            &AudioNode::handleOutputSubscribe,
+            destination,
+            &AudioNode::handleInputSubscribe);
+    }
+
+    ma_result unsubscribeInput() {
+        return _unsubscribe(inputNode,
+            &AudioNode::isInputSubscribed,
+            &AudioNode::handleInputUnsubscribe);
+    }
+
+    ma_result unsubscribeOutput() {
+        return _unsubscribe(outputNode,
+            &AudioNode::isOutputSubscribed,
+            &AudioNode::handleOutputUnsubscribe);
+    }
+
+    virtual bool isSubscribed() { return false; }
+    virtual ma_result subscribe(AudioNode*) { return MA_NOT_IMPLEMENTED; }
+    virtual ma_result unsubscribe() { return MA_NOT_IMPLEMENTED; }
+
+    void unsubscribeAll() {
+        this->unsubscribeInput();
+        this->unsubscribeOutput();
+    }
+
+    ~AudioNode() { this->unsubscribeAll(); }
 };

@@ -28,11 +28,16 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
     // 2) Use it
-    if (auto* device = SoundIO::getDefaultPlaybackDevice()) {
+    if (auto* device = SoundIO::getDefaultSpeaker()) {
         MessageBoxW(NULL, utf8_to_wstring(device->name).c_str(), L"Success", MB_ICONINFORMATION);
     } else {
         MessageBoxW(NULL, L"No default playback device", L"Error", MB_ICONWARNING);
     }
+    
+
+    auto* mic = SoundIO::getDefaultMicrophone();
+
+    mic->subscribe();
 
     // 3) Shutdown (be nice)
     SoundIO::shutdown();
