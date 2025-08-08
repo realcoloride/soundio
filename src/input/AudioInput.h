@@ -3,7 +3,7 @@
 #include "../include.h"
 #include "../core/AudioFormat.h"
 
-class AudioInput {
+class AudioInput : public AudioNode {
 public:
     virtual ~AudioInput() = default;
     virtual ma_data_source* dataSource() = 0;     // required

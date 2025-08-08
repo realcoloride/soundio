@@ -5,9 +5,6 @@
 
 class AudioMicrophoneDevice : public AudioDevice {
 protected:
-    ma_encoder encoder;
-    ma_encoder_config encoderConfig;
-
     void dataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) override {
         (void)pDevice;
         (void)pOutput;
