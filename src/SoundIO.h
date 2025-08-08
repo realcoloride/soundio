@@ -92,15 +92,37 @@ public:
         return it != idToDevices.end() ? it->second.get() : nullptr;
     }
 
-    static auto getDevices() {
-        // TODO: return container if needed
+    static std::vector<AudioDevice*> getAllDevices() {
+        std::vector<AudioDevice*> out;
+        out.reserve(idToDevices.size());
+        for (auto& kv : idToDevices)
+            out.push_back(kv.second.get());
+        return out;
     }
 
-    static AudioMicrophoneDevice* getDefaultCaptureDevice() {
+    static std::vector<AudioMicrophoneDevice*> getAllMicrophones() {
+        std::vector<AudioMicrophoneDevice*> out;
+        out.reserve(idToDevices.size());
+        for (auto& kv : idToDevices)
+        if (auto* mic = dynamic_cast<AudioMicrophoneDevice*>(kv.second.get()))
+            out.push_back(mic);
+        return out;
+    }
+
+    static std::vector<AudioSpeakerDevice*> getAllSpeakers() {
+        std::vector<AudioSpeakerDevice*> out;
+        out.reserve(idToDevices.size());
+        for (auto& kv : idToDevices)
+        if (auto* spk = dynamic_cast<AudioSpeakerDevice*>(kv.second.get())) 
+            out.push_back(spk);
+        return out;
+    }
+
+    static AudioMicrophoneDevice* getDefaultMicrophone() {
         return defaultCaptureDeviceId.empty() ? nullptr : dynamic_cast<AudioMicrophoneDevice*>(getDeviceById(defaultCaptureDeviceId));
     }
 
-    static AudioSpeakerDevice* getDefaultPlaybackDevice() {
+    static AudioSpeakerDevice* getDefaultSpeaker() {
         return defaultPlaybackDeviceId.empty() ? nullptr : dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultPlaybackDeviceId));
     }
 };

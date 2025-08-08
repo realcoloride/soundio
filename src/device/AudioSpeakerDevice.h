@@ -28,12 +28,8 @@ public:
 		AudioDevice::sleep();
 	}
 
-	AudioSpeakerDevice(const std::string& deviceId) : AudioDevice(deviceId) {
-		
-	}
-	~AudioSpeakerDevice() {
-		
-	}
+	AudioSpeakerDevice(const std::string& deviceId) : AudioDevice(deviceId) { }
+	~AudioSpeakerDevice() { this->sleep(); }
 
 	std::unique_ptr<ma_engine> engine;
 };

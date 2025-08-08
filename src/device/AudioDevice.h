@@ -7,14 +7,12 @@ public:
 	std::string id;
 	std::string name;
 
+	AudioFormat format;
 	ma_device_info deviceInfo;
-	ma_format format;
-	ma_uint32 sampleRate;
-	ma_uint32 channels;
+
 	bool isDefault;
 
 	ma_device* internalDevice;
-
 
 	void subscribe() {
 		
@@ -46,9 +44,8 @@ public:
 
 		this->name = deviceNameString;
 		this->isDefault = deviceInfo.isDefault;
-		this->format = format;
-		this->sampleRate = sampleRate;
-		this->channels = channels;
+
+		this->format = AudioFormat(format, sampleRate, channels);
 	}
 
 	AudioDevice(std::string deviceId) {
