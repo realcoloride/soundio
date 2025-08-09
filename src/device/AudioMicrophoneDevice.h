@@ -1,7 +1,8 @@
 #pragma once
 
 #include "./AudioDevice.h"
-#include "../core/AudioInput.h"
+#include "../input/AudioInput.h"
+#include "../output/AudioOutput.h"
 
 class AudioMicrophoneDevice : public AudioDevice, public AudioInput {
 protected:
@@ -36,8 +37,5 @@ protected:
     }
 
 public:
-
-    bool isSubscribed() override { return isOutputSubscribed(); }
-    ma_result subscribe(AudioOutput* node) { return subscribeOutput(node); }
-    ma_result unsubscribe() override { return unsubscribeOutput(); }
+    AudioMicrophoneDevice(const std::string& id) : AudioDevice(id) {}
 };

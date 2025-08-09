@@ -31,8 +31,25 @@ public:
     }
 
     void pushPCM(const void* frames, ma_uint64 count) {
-        ma_uint64 written = 0;
-        ma_pcm_rb_write(&ringBuffer, frames, count, &written);
+        ma_uint64 framesRemaining = count;
+        const uint8_t* pSrc = static_cast<const uint8_t*>(frames);
+
+        while (framesRemaining > 0) {
+            void* pDst;
+            ma_uint32 framesAvailable;
+
+            ma_pcm_rb_acquire_write(&ringBuffer, &framesAvailable, &pDst);
+            if (framesAvailable == 0)
+                break;
+
+            ma_uint32 framesToWrite = (ma_uint32)std::min<ma_uint64>(framesRemaining, framesAvailable);
+
+            memcpy(pDst, pSrc, framesToWrite * format.frameSizeBytes);
+            ma_pcm_rb_commit_write(&ringBuffer, framesToWrite);
+
+            framesRemaining -= framesToWrite;
+            pSrc += framesToWrite * frameSizeBytes;
+        }
     }
 
     ma_data_source* dataSource() override {

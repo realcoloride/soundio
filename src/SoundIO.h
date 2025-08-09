@@ -13,10 +13,8 @@ constexpr int SOUNDIO_VERSION = 100;
 #include "./device/AudioSpeakerDevice.h"
 
 // input
-#include "./input/AudioInput.h"
 #include "./input/AudioFileInput.h"
 #include "./input/AudioStreamInput.h"
-#include "./input/AudioDeviceInput.h"
 
 // mixer
 #include "./mixer/AudioCombiner.h"
@@ -24,8 +22,6 @@ constexpr int SOUNDIO_VERSION = 100;
 #include "./mixer/AudioResampler.h"
 
 // output
-#include "./output/AudioOutput.h"
-#include "./output/AudioDeviceOutput.h"
 #include "./output/AudioFileOutput.h"
 #include "./output/AudioStreamOutput.h"
 
@@ -37,10 +33,9 @@ constexpr int SOUNDIO_VERSION = 100;
 #include "./utils/deviceloops.h"
 
 class SoundIO {
-public:
-    static inline ma_context context;
-
 private:    
+    static ma_context context;
+
     static inline bool initialized = false;
 
     static inline std::map<std::string, std::unique_ptr<AudioDevice>> idToDevices;
@@ -151,9 +146,8 @@ public:
 protected:
     static inline std::vector<std::unique_ptr<AudioNode>> nodes;
 
-    static void clearAllNodes() {
-        nodes.clear(); // unique_ptr cleanup happens automatically
-    }
+    // unique_ptr cleanup happens automatically
+    static void clearAllNodes() { nodes.clear(); }
 
     template <typename T, typename... Args>
     static T* registerNode(Args&&... args) {
@@ -170,11 +164,7 @@ public:
 
     // creating inputs, outputs etc
     // input
-    static AudioDeviceInput* createDeviceInput(AudioMicrophoneDevice* microphone) {
-        auto* input = registerNode<AudioDeviceInput>();
-        microphone->subscribe(input);
-        return input;
-    }
+    /*
     static AudioFileInput* createFileInput(const std::string& path) {
         auto* input = registerNode<AudioFileInput>();
         input->open(path);
@@ -199,9 +189,6 @@ public:
     }
 
     // output
-    static AudioDeviceOutput* createDeviceOutput(AudioSpeakerDevice* speaker) {
-
-    }
     static AudioFileOutput* createFileOutput() {
 
     }
@@ -212,7 +199,7 @@ public:
     // player
     static AudioPlayer* createAudioPlayer(AudioInput* input) {
 
-    }
+    }*/
 };
 
 inline ma_result SoundIO::initialize() {

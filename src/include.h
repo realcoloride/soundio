@@ -18,5 +18,7 @@
 #include <type_traits>
 #include <iostream>
 #include <functional>
+#include <unordered_set>
+#include <cstring>
 
 #endif // INCLUDE_H

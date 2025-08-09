@@ -35,9 +35,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
     
 
-    auto* mic = SoundIO::getDefaultMicrophone();
-    mic->subscribe();
-
     SoundIO::getDefaultMicrophone()->subscribe(SoundIO::getDefaultSpeaker());
 
     // 3) Shutdown (be nice)

@@ -35,18 +35,17 @@ public:
 		ma_result result = MA_SUCCESS;
 
 		ma_engine_config engineConfig = ma_engine_config_init();
-		engineConfig.pContext = &SoundIO::context;
 		engineConfig.pPlaybackDeviceID = &deviceInfo.id;
 		engineConfig.channels = deviceFormat.channels;
 		engineConfig.sampleRate = deviceFormat.sampleRate;
 		engineConfig.dataCallback = &AudioDevice::onDeviceData;
-		engineConfig.pUserData = this;
 
 		this->engine = std::make_unique<ma_engine>();
 		result = ma_engine_init(&engineConfig, engine.get());
 
 		if (result == MA_SUCCESS) {
 			this->internalDevice = engine.get()->pDevice;
+			this->internalDevice->pUserData = this;
 			this->isAwake = true;
 			this->audioFormat = deviceFormat;
 			this->renegotiate();
@@ -57,7 +56,7 @@ public:
 
 		return result;
 	}
-	void sleep() {
+	virtual void sleep() {
 		if (internalDevice) internalDevice = nullptr;
 		if (engine) {
 			ma_engine_uninit(engine.get());

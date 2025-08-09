@@ -1,18 +1,13 @@
 #pragma once
-#include "../core/AudioNode.h"
-#include "../core/AudioFormat.h"
 
-class AudioOutput : public virtual AudioNode {
-protected:
-    AudioFormat audioFormat;
+#include "../core/AudioEndpoint.h"
 
+class AudioOutput : public virtual AudioEndpoint {
 public:
-    AudioOutput(AudioFormat audioFormat)
-        : audioFormat(audioFormat) {
-    }
+    bool isSubscribed() override { return isInputSubscribed(); }
 
-    // called by downstream consumers (speakers, file writers, etc.)
-    virtual void readPCM(void* outputBuffer, ma_uint32 frameCount) = 0;
+    ma_result subscribe(AudioInput* source) { return subscribeInput(static_cast<AudioNode*>(source)); }
+    ma_result unsubscribe() { return unsubscribeInput(); }
 
-    const AudioFormat& getFormat() const { return audioFormat; }
+    virtual ~AudioOutput() = default;
 };

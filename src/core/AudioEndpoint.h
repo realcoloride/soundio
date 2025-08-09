@@ -36,11 +36,15 @@ protected:
             hasConverter = false;
         }
 
-        ma_data_converter_config cfg = ma_data_converter_config_init(
-            inFmt.toMaFormat(), inFmt.channels, inFmt.sampleRate,
-            outFmt.toMaFormat(), outFmt.channels, outFmt.sampleRate
+        ma_data_converter_config config = ma_data_converter_config_init(
+            inFmt.toMaFormat(),            // formatIn
+            outFmt.toMaFormat(),           // formatOut
+            inFmt.channels,                // channelsIn
+            outFmt.channels,               // channelsOut
+            inFmt.sampleRate,               // sampleRateIn
+            outFmt.sampleRate                // sampleRateOut
         );
-        ma_result r = ma_data_converter_init(&cfg, nullptr, &converter);
+        ma_result r = ma_data_converter_init(&config, nullptr, &converter);
         if (r != MA_SUCCESS) return r;
 
         hasConverter = true;

@@ -109,5 +109,9 @@ protected:
         this->unsubscribeOutput();
     }
 
+    virtual ma_data_source* dataSource() = 0;
+    virtual AudioFormat format() const = 0;
+
+public:
     ~AudioNode() { this->unsubscribeAll(); }
 };
