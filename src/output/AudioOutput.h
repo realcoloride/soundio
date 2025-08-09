@@ -2,7 +2,7 @@
 #include "../core/AudioNode.h"
 #include "../core/AudioFormat.h"
 
-class AudioOutput : public AudioNode {
+class AudioOutput : public virtual AudioNode {
 protected:
     AudioFormat audioFormat;
 

@@ -37,8 +37,10 @@ constexpr int SOUNDIO_VERSION = 100;
 #include "./utils/deviceloops.h"
 
 class SoundIO {
-private:
+public:
     static inline ma_context context;
+
+private:    
     static inline bool initialized = false;
 
     static inline std::map<std::string, std::unique_ptr<AudioDevice>> idToDevices;

@@ -8,8 +8,8 @@ protected:
     using IsSubscribedMethod = bool (AudioNode::*)();
     using HandleMethod = ma_result(AudioNode::*)(AudioNode*);
 
-    inline AudioNode* inputNode = nullptr;
-    inline AudioNode* outputNode = nullptr;
+    AudioNode* inputNode = nullptr;
+    AudioNode* outputNode = nullptr;
 
     virtual ma_result handleInputSubscribe(AudioNode*) { return MA_SUCCESS; }
     virtual ma_result handleOutputSubscribe(AudioNode*) { return MA_SUCCESS; }
