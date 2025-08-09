@@ -34,7 +34,7 @@ constexpr int SOUNDIO_VERSION = 100;
 
 class SoundIO {
 private:    
-    static ma_context context;
+    static inline ma_context context;
 
     static inline bool initialized = false;
 

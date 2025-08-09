@@ -38,4 +38,8 @@ protected:
 
 public:
     AudioMicrophoneDevice(const std::string& id) : AudioDevice(id) {}
+
+    // Implement pure virtuals from AudioNode via AudioEndpoint path
+    ma_data_source* dataSource() override { return nullptr; }
+    AudioFormat format() const override { return audioFormat; }
 };
