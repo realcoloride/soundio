@@ -16,11 +16,12 @@ protected:
         // fast exit if sleeping or not wired up
         if (!isAwake || !isOutputSubscribed())
             return;
-
+        
         if (pInput == nullptr) {
             SI_LOG("Mic dataCallback: pInput=null, frames=" << frameCount);
             return;
         }
+        
         SI_LOG("Mic dataCallback: frames=" << frameCount);
         this->submitPCM(pInput, frameCount);
     }
@@ -44,7 +45,7 @@ protected:
     }
 
 public:
-    AudioMicrophoneDevice(const std::string& id) : AudioDevice(id) {}
+    AudioMicrophoneDevice(const std::string& id, ma_context* context) : AudioDevice(id, context) {}
 
     // Implement pure virtuals from AudioNode via AudioEndpoint path
     ma_data_source* dataSource() override { return nullptr; }

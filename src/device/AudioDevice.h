@@ -5,8 +5,8 @@
 
 class AudioDevice : public virtual AudioEndpoint {
 protected:
-	ma_device* internalDevice = nullptr;
-	std::unique_ptr<ma_engine> engine;
+	std::unique_ptr<ma_device> device = nullptr;
+	ma_context* context = nullptr;
 
 	virtual void dataCallback(
 		ma_device* pDevice, 
@@ -27,53 +27,77 @@ public:
 
 	AudioFormat deviceFormat;
 	ma_device_info deviceInfo;
+	ma_device_type deviceType;
 
 	bool isDefault = false;
 
 	bool isAwake = false;
 	virtual ma_result wakeUp() {
 		ma_result result = MA_SUCCESS;
+		this->isAwake = false;
+		SI_LOG("wakeUp: context=" << context << " backend=" << (context ? context->backend : -999));
 
-		ma_engine_config engineConfig = ma_engine_config_init();
-		engineConfig.pPlaybackDeviceID = &deviceInfo.id;
-		engineConfig.channels = deviceFormat.channels;
-		engineConfig.sampleRate = deviceFormat.sampleRate;
-		engineConfig.dataCallback = &AudioDevice::onDeviceData;
+		ma_device_config config = ma_device_config_init(deviceType);
+		if (deviceType == ma_device_type_capture) {
+			config.capture.pDeviceID = &deviceInfo.id;
+			config.capture.format = deviceFormat.format;
+			config.capture.channels = deviceFormat.channels;
+		}
+		else if (deviceType == ma_device_type_playback) {
+			config.playback.pDeviceID = &deviceInfo.id;
+			config.playback.format = deviceFormat.format;
+			config.playback.channels = deviceFormat.channels;
+		}
 
-		this->engine = std::make_unique<ma_engine>();
-		result = ma_engine_init(&engineConfig, engine.get());
+		config.sampleRate = deviceFormat.sampleRate;
+		config.dataCallback = &AudioDevice::onDeviceData;
+		config.pUserData = this;
 
+		this->device = std::make_unique<ma_device>();
+
+		result = ma_device_init(context, &config, device.get());
+		
+		if (result != MA_SUCCESS) {
+			device.reset();
+			SI_LOG("wakeUp FAILED: id=" << id << " res=" << result);
+			return result;
+		}
+
+		result = ma_device_start(device.get());
+		SI_LOG("THIS SHOULD BE SEEN");
 		if (result == MA_SUCCESS) {
-			this->internalDevice = engine.get()->pDevice;
-			this->internalDevice->pUserData = this;
 			this->isAwake = true;
 			this->audioFormat = deviceFormat;
 			this->renegotiate();
 			SI_LOG("wakeUp ok: id=" << id << " name=" << name << " fmt=" << deviceFormat.format << " ch=" << deviceFormat.channels << " sr=" << deviceFormat.sampleRate);
 		} else {
-			this->internalDevice == nullptr;
-			engine.reset();
+			ma_device_uninit(device.get());
+			device.reset();
+
 			SI_LOG("wakeUp FAILED: id=" << id << " res=" << result);
 		}
 
 		return result;
 	}
 	virtual void sleep() {
+		if (!isAwake) return;
+
 		SI_LOG("sleep: id=" << id);
-		if (internalDevice) internalDevice = nullptr;
-		if (engine) {
-			ma_engine_uninit(engine.get());
-			engine.reset();
+		if (device) {
+			ma_device_uninit(device.get());
+			device.reset();
 		}
 		isAwake = false;
 	}
 	
-	ma_result ensureAwake() { return !this->isAwake ? wakeUp() : MA_SUCCESS; }
+	ma_result ensureAwake() {
+		SI_LOG("ensureAwake called for " << name << ", isAwake=" << isAwake);  return !this->isAwake ? wakeUp() : MA_SUCCESS; }
 
-	void updateDevice(ma_device_info deviceInfo, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
+	void updateDevice(ma_device_info deviceInfo, ma_device_type deviceType, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
 		this->name = deviceInfo.name ? std::string(deviceInfo.name) : std::string{};
 		this->deviceInfo = deviceInfo;
 		this->isDefault = (deviceInfo.isDefault != 0);
+		this->deviceType = deviceType;
 
 		AudioFormat newFormat(format, channels, sampleRate);
 		if (deviceFormat != newFormat) {
@@ -84,7 +108,10 @@ public:
 		}
 	}
 
-	AudioDevice(std::string deviceId) { this->id = deviceId; }
+	AudioDevice(std::string deviceId, ma_context* context) { 
+		this->id = deviceId;
+		this->context = context;
+	}
 	virtual ~AudioDevice() { this->sleep(); }
 
 	AudioDevice(const AudioDevice&) = delete;

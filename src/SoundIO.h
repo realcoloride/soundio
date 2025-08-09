@@ -35,6 +35,7 @@ constexpr int SOUNDIO_VERSION = 100;
 class SoundIO {
 private:    
     static inline ma_context context;
+    static inline std::unordered_map<std::string, int> missingCount;
 
     static inline bool initialized = false;
 
@@ -43,12 +44,17 @@ private:
     static ma_result onDeviceInit(
         ma_device* pDevice, const ma_device_config* pConfig,
         ma_device_descriptor* pDescriptorPlayback, ma_device_descriptor* pDescriptorCapture
-    ) { 
-        return pDevice == nullptr ? MA_INVALID_ARGS : refreshDevices(); 
+    ) {
+        if (!initialized) return MA_SUCCESS;
+        if (pDevice == nullptr) return MA_INVALID_ARGS;
+        if (pDevice->pUserData == nullptr) return MA_SUCCESS;  // Likely an enumeration probe
+        return refreshDevices();
     }
 
     static ma_result onDeviceUninit(ma_device* pDevice) {
-        return pDevice == nullptr ? MA_INVALID_ARGS : refreshDevices();
+        if (!initialized) return MA_SUCCESS;
+        if (pDevice == nullptr) return MA_INVALID_ARGS;
+        return refreshDevices(); // remove from list
     }
 
     static inline std::string defaultMicrophoneId = "";
@@ -57,6 +63,7 @@ private:
     template <typename T, typename = std::enable_if_t<std::is_base_of<AudioDevice, T>::value>>
     static void handleDeviceLoop(
         const ma_device_info& deviceInfo,
+        ma_device_type deviceType,
         const std::string& normalizedDeviceId,
         ma_format format,
         ma_uint32 sampleRate,
@@ -74,7 +81,7 @@ private:
             addDevice(std::move(newDevice));
         }
 
-        device->updateDevice(deviceInfo, format, sampleRate, channels);
+        device->updateDevice(deviceInfo, deviceType, format, sampleRate, channels);
 
         if (device->isDefault)
             defaultDevice = device;
@@ -211,9 +218,6 @@ inline ma_result SoundIO::initialize() {
     if (context.backend == ma_backend_null) return MA_BACKEND_NOT_ENABLED;
 
     // setup callbacks
-    context.callbacks.onDeviceInit = onDeviceInit;
-    context.callbacks.onDeviceUninit = onDeviceUninit;
-
     SI_LOG("SoundIO initialize: backend=" << context.backend);
     refreshDevices();
 
@@ -226,6 +230,17 @@ inline ma_result SoundIO::refreshDevices() {
     ma_uint32 speakerCount;
     ma_device_info* microphones;
     ma_uint32 microphoneCount;
+
+    SI_LOG("refreshDevices() called from:");
+    // Add a simple stack trace or debug info
+    #ifdef _WIN32
+        void* stack[10];
+        unsigned short frames = CaptureStackBackTrace(0, 10, stack, NULL);
+        for (unsigned short i = 0; i < frames; i++) {
+            SI_LOG("  Frame " << i << ": " << stack[i]);
+        }
+    #endif
+
 
     ma_context_get_devices(&context, &speakers, &speakerCount, &microphones, &microphoneCount);
     SI_LOG("refreshDevices: speakers=" << speakerCount << " mics=" << microphoneCount);
@@ -244,11 +259,11 @@ inline ma_result SoundIO::refreshDevices() {
             seenIds.insert(normalizedDeviceId);
 
             auto creationCallback = [&normalizedDeviceId]() -> std::unique_ptr<AudioSpeakerDevice> {
-                return std::make_unique<AudioSpeakerDevice>(normalizedDeviceId);
+                return std::make_unique<AudioSpeakerDevice>(normalizedDeviceId, &context);
             };
 
             handleDeviceLoop<AudioSpeakerDevice>(
-                deviceInfo, normalizedDeviceId, format, sampleRate, channels,
+                deviceInfo, ma_device_type_playback, normalizedDeviceId, format, sampleRate, channels,
                 defaultSpeaker, creationCallback
             );
         }
@@ -262,11 +277,11 @@ inline ma_result SoundIO::refreshDevices() {
             seenIds.insert(normalizedDeviceId);
 
             auto creationCallback = [&normalizedDeviceId]() -> std::unique_ptr<AudioMicrophoneDevice> {
-                return std::make_unique<AudioMicrophoneDevice>(normalizedDeviceId);
+                return std::make_unique<AudioMicrophoneDevice>(normalizedDeviceId, &context);
             };
 
             handleDeviceLoop<AudioMicrophoneDevice>(
-                deviceInfo, normalizedDeviceId, format, sampleRate, channels,
+                deviceInfo, ma_device_type_capture, normalizedDeviceId, format, sampleRate, channels,
                 defaultMicrophone, creationCallback
             );
         }
@@ -274,12 +289,22 @@ inline ma_result SoundIO::refreshDevices() {
 
     if (result != MA_SUCCESS) return result;
 
-    // remove any devices that were not seen in this refresh
-    for (auto it = idToDevices.begin(); it != idToDevices.end(); ) {
-        if (seenIds.count(it->first) == 0)
-            it = idToDevices.erase(it);
+
+    for (auto& kv : idToDevices) {
+        if (seenIds.count(kv.first) == 0)
+            missingCount[kv.first]++;
         else
+            missingCount[kv.first] = 0;
+    }
+
+    for (auto it = idToDevices.begin(); it != idToDevices.end(); ) {
+        if (missingCount[it->first] > 2) { // Only delete after 3 consecutive misses
+            missingCount.erase(it->first);
+            it = idToDevices.erase(it);
+        }
+        else {
             ++it;
+        }
     }
 
     // update defaults

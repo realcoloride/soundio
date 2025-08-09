@@ -80,7 +80,7 @@ public:
         SI_LOG("Speaker receivePCM: in=" << count << " written=" << totalWritten << " remaining=" << remaining);
     }
 
-    AudioSpeakerDevice(const std::string& id) : AudioDevice(id) {}
+    AudioSpeakerDevice(const std::string& id, ma_context* context) : AudioDevice(id, context) {}
 
     // Implement pure virtuals from AudioNode via AudioEndpoint path
     ma_data_source* dataSource() override { return nullptr; }

@@ -28,8 +28,14 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     auto* speaker = SoundIO::getDefaultSpeaker();
     auto* mic = SoundIO::getDefaultMicrophone();
 
-    if (speaker) {
+    if (mic) {
         MessageBoxW(NULL, utf8_to_wstring(mic->name).c_str(), L"Success", MB_ICONINFORMATION);
+    }
+    else {
+        MessageBoxW(NULL, L"No default capture device", L"Error", MB_ICONWARNING);
+    }
+
+    if (speaker) {
         MessageBoxW(NULL, utf8_to_wstring(speaker->name).c_str(), L"Success", MB_ICONINFORMATION);
     }
     else {
