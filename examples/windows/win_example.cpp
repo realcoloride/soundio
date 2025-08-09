@@ -37,6 +37,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     }
 
     if (mic && speaker) {
+        // Ensure devices are awake before wiring; logs will confirm formats.
+        ma_result ar = speaker->ensureAwake();
+        if (ar != MA_SUCCESS) MessageBoxW(NULL, L"Speaker wakeUp failed", L"Error", MB_ICONERROR);
+        ar = mic->ensureAwake();
+        if (ar != MA_SUCCESS) MessageBoxW(NULL, L"Mic wakeUp failed", L"Error", MB_ICONERROR);
+
         mic->subscribe(speaker); // start the background work
     }
 

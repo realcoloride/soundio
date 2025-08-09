@@ -15,5 +15,6 @@ public:
 };
 
 inline ma_result AudioInput::subscribe(AudioOutput* destination) {
+    SI_LOG("AudioInput::subscribe -> " << destination);
     return subscribeOutput((AudioNode*)destination);
 }

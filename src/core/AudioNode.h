@@ -32,6 +32,7 @@ protected:
         if ((this->*isSubscribedMethod)())
             return MA_DEVICE_ALREADY_INITIALIZED;
 
+        SI_LOG("subscribe begin: this=" << this << ", other=" << otherNode);
         ma_result result = (this->*handleMethod)(otherNode);
         if (result != MA_SUCCESS)
             return result;
@@ -48,6 +49,7 @@ protected:
                 otherNode->inputNode = this;
         }
 
+        SI_LOG("subscribe done: inputNode=" << inputNode << ", outputNode=" << outputNode);
         return MA_SUCCESS;
     }
 
@@ -59,6 +61,7 @@ protected:
         if (!(this->*isSubscribedMethod)())
             return MA_DEVICE_NOT_INITIALIZED;
 
+        SI_LOG("unsubscribe begin: this=" << this << ", peer=" << audioNode);
         ma_result result = (this->*handleMethod)(audioNode);
         if (result != MA_SUCCESS)
             return result;
@@ -71,6 +74,7 @@ protected:
         }
 
         audioNode = nullptr;
+        SI_LOG("unsubscribe done: inputNode=" << inputNode << ", outputNode=" << outputNode);
         return MA_SUCCESS;
     }
 
@@ -113,5 +117,5 @@ protected:
     virtual AudioFormat format() const = 0;
 
 public:
-    ~AudioNode() { this->unsubscribeAll(); }
+    ~AudioNode() { SI_LOG("~AudioNode(" << this << ")"); this->unsubscribeAll(); }
 };

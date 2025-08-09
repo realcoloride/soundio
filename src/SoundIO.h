@@ -214,6 +214,7 @@ inline ma_result SoundIO::initialize() {
     context.callbacks.onDeviceInit = onDeviceInit;
     context.callbacks.onDeviceUninit = onDeviceUninit;
 
+    SI_LOG("SoundIO initialize: backend=" << context.backend);
     refreshDevices();
 
     initialized = true;
@@ -227,6 +228,7 @@ inline ma_result SoundIO::refreshDevices() {
     ma_uint32 microphoneCount;
 
     ma_context_get_devices(&context, &speakers, &speakerCount, &microphones, &microphoneCount);
+    SI_LOG("refreshDevices: speakers=" << speakerCount << " mics=" << microphoneCount);
 
     ma_result result = MA_SUCCESS;
 
@@ -291,5 +293,6 @@ inline ma_result SoundIO::refreshDevices() {
     else
         defaultMicrophoneId.clear();
 
+    SI_LOG("defaults: speakerId=" << defaultSpeakerId << " micId=" << defaultMicrophoneId);
     return MA_SUCCESS;
 }

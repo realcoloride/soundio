@@ -49,14 +49,17 @@ public:
 			this->isAwake = true;
 			this->audioFormat = deviceFormat;
 			this->renegotiate();
+			SI_LOG("wakeUp ok: id=" << id << " name=" << name << " fmt=" << deviceFormat.format << " ch=" << deviceFormat.channels << " sr=" << deviceFormat.sampleRate);
 		} else {
 			this->internalDevice == nullptr;
 			engine.reset();
+			SI_LOG("wakeUp FAILED: id=" << id << " res=" << result);
 		}
 
 		return result;
 	}
 	virtual void sleep() {
+		SI_LOG("sleep: id=" << id);
 		if (internalDevice) internalDevice = nullptr;
 		if (engine) {
 			ma_engine_uninit(engine.get());
@@ -77,6 +80,7 @@ public:
 			this->deviceFormat = newFormat;
 			this->audioFormat = newFormat;
 			this->renegotiate();
+			SI_LOG("updateDevice: id=" << id << " default=" << isDefault << " fmt=" << format << " ch=" << channels << " sr=" << sampleRate);
 		}
 	}
 

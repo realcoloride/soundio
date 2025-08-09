@@ -23,6 +23,8 @@ protected:
     ma_result buildConverter(const AudioFormat& inFmt, const AudioFormat& outFmt) {
         // Control thread only (graph stopped). No allocations in audio thread.
         if (inFmt == outFmt) {
+            SI_LOG("buildConverter: passthrough in=" << inFmt.channels << "ch@" << inFmt.sampleRate << " fmt=" << inFmt.format
+                   << " out=" << outFmt.channels << "ch@" << outFmt.sampleRate << " fmt=" << outFmt.format);
             if (hasConverter) {
                 ma_data_converter_uninit(&converter, nullptr);
                 hasConverter = false;
@@ -49,6 +51,8 @@ protected:
 
         hasConverter = true;
         scratchBuffer.resize(static_cast<size_t>(CHUNK_FRAMES) * outFmt.frameSizeBytes());
+        SI_LOG("buildConverter: created converter in=" << inFmt.channels << "ch@" << inFmt.sampleRate << " fmt=" << inFmt.format
+               << " -> out=" << outFmt.channels << "ch@" << outFmt.sampleRate << " fmt=" << outFmt.format);
         return MA_SUCCESS;
     }
 
@@ -56,6 +60,8 @@ protected:
         if (!isOutputSubscribed()) return;
         const AudioFormat& inFmt = producerFormat();
         const AudioFormat& outFmt = consumerFormat();
+        SI_LOG("tryNegotiate: inFmt=" << inFmt.channels << "ch@" << inFmt.sampleRate << " fmt=" << inFmt.format
+               << " outFmt=" << outFmt.channels << "ch@" << outFmt.sampleRate << " fmt=" << outFmt.format);
         (void)buildConverter(inFmt, outFmt);
     }
 
@@ -67,7 +73,7 @@ protected:
     }
 
 public:
-    // Call this on control thread after changing this node’s native format.
+    // Call this on control thread after changing this nodeï¿½s native format.
     virtual void renegotiate() { tryNegotiate(); }
 
     // AUDIO THREAD: no allocations, no locks.
@@ -75,6 +81,7 @@ public:
         if (!isOutputSubscribed() || inFrameCount == 0) return;
 
         if (!hasConverter) {
+            SI_LOG("submitPCM passthrough: frames=" << inFrameCount);
             forwardToOutput(inFrames, inFrameCount);
             return;
         }
@@ -97,7 +104,7 @@ public:
             if (outProduced > 0) {
                 forwardToOutput(scratchBuffer.data(), static_cast<ma_uint32>(outProduced));
             }
-            if (r != MA_SUCCESS) break;
+            if (r != MA_SUCCESS) { SI_LOG("submitPCM convert error: r=" << r); break; }
             inLeft -= inToProcess;
         }
     }
@@ -105,22 +112,26 @@ public:
     // Default mid-node behavior: just pass through.
     // Sinks (speaker/file) override this to actually consume.
     virtual void receivePCM(const void* frames, ma_uint32 frameCount) {
+        (void)frames; SI_LOG("receivePCM: frameCount=" << frameCount << " this=" << this);
         forwardToOutput(frames, frameCount);
     }
 
 protected:
     // Link hooks (CONTROL THREAD ONLY).
     ma_result handleInputSubscribe(AudioNode* src) override {
+        SI_LOG("handleInputSubscribe: this=" << this << " src=" << src);
         ma_result r = AudioNode::handleInputSubscribe(src);
         if (r == MA_SUCCESS) tryNegotiate();
         return r;
     }
     ma_result handleOutputSubscribe(AudioNode* dst) override {
+        SI_LOG("handleOutputSubscribe: this=" << this << " dst=" << dst);
         ma_result r = AudioNode::handleOutputSubscribe(dst);
         if (r == MA_SUCCESS) tryNegotiate();
         return r;
     }
     ma_result handleInputUnsubscribe(AudioNode* src) override {
+        SI_LOG("handleInputUnsubscribe: this=" << this << " src=" << src);
         if (hasConverter) {
             ma_data_converter_uninit(&converter, nullptr);
             hasConverter = false;
@@ -129,6 +140,7 @@ protected:
         return AudioNode::handleInputUnsubscribe(src);
     }
     ma_result handleOutputUnsubscribe(AudioNode* dst) override {
+        SI_LOG("handleOutputUnsubscribe: this=" << this << " dst=" << dst);
         if (hasConverter) {
             ma_data_converter_uninit(&converter, nullptr);
             hasConverter = false;

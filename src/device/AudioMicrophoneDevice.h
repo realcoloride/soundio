@@ -17,6 +17,11 @@ protected:
         if (!isAwake || !isOutputSubscribed())
             return;
 
+        if (pInput == nullptr) {
+            SI_LOG("Mic dataCallback: pInput=null, frames=" << frameCount);
+            return;
+        }
+        SI_LOG("Mic dataCallback: frames=" << frameCount);
         this->submitPCM(pInput, frameCount);
     }
 
@@ -28,11 +33,13 @@ protected:
 
         // outputnode is assigned automatically after this call
         output = dynamic_cast<AudioOutput*>(node);
+        SI_LOG("Mic subscribed to output: this=" << this << " output=" << output);
         
         return MA_SUCCESS;
     }
     ma_result handleOutputUnsubscribe(AudioNode* node) override {
         output = nullptr;
+        SI_LOG("Mic unsubscribed from output: this=" << this);
         return AudioInput::handleOutputUnsubscribe(node);
     }
 

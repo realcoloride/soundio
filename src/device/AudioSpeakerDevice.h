@@ -17,6 +17,7 @@ protected:
         const size_t frameSize = audioFormat.frameSizeBytes();
         ma_uint32 remaining = frames;
 
+        ma_uint32 totalRead = 0;
         while (remaining > 0) {
             void* readPtr = nullptr;
             ma_uint32 avail = 0;
@@ -30,7 +31,9 @@ protected:
 
             dst += chunk * frameSize;
             remaining -= chunk;
+            totalRead += chunk;
         }
+        SI_LOG("Speaker dataCallback: framesReq=" << frames << " read=" << totalRead << " remaining=" << remaining);
     }
 
 public:
@@ -43,6 +46,7 @@ public:
         const ma_uint32 capacityFrames = audioFormat.sampleRate / 2; // ~0.5s
         r = ma_pcm_rb_init(audioFormat.toMaFormat(), audioFormat.channels, capacityFrames, nullptr, nullptr, &ring);
         ringInit = (r == MA_SUCCESS);
+        SI_LOG("Speaker wakeUp: ringInit=" << ringInit << " capacityFrames=" << capacityFrames);
         return r;
     }
 
@@ -59,6 +63,7 @@ public:
         const size_t frameSize = audioFormat.frameSizeBytes();
         ma_uint32 remaining = count;
 
+        ma_uint32 totalWritten = 0;
         while (remaining > 0) {
             void* writePtr = nullptr;
             ma_uint32 cap = 0;
@@ -70,7 +75,9 @@ public:
 
             src += chunk * frameSize;
             remaining -= chunk;
+            totalWritten += chunk;
         }
+        SI_LOG("Speaker receivePCM: in=" << count << " written=" << totalWritten << " remaining=" << remaining);
     }
 
     AudioSpeakerDevice(const std::string& id) : AudioDevice(id) {}
