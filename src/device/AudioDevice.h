@@ -3,7 +3,7 @@
 #include "../include.h"
 #include "../core/AudioNode.h"
 
-class AudioDevice : public AudioNode {
+class AudioDevice {
 protected:
 	ma_device* internalDevice;
 	std::unique_ptr<ma_engine> engine;
@@ -22,9 +22,9 @@ public:
 	AudioFormat format;
 	ma_device_info deviceInfo;
 
-	bool isDefault;
+	bool isDefault = false;
 
-	bool isAwake;
+	bool isAwake = false;
 	virtual ma_result wakeUp() {
 		ma_result result = MA_SUCCESS;
 
@@ -53,17 +53,15 @@ public:
 	ma_result ensureAwake() { return !this->isAwake ? wakeUp() : MA_SUCCESS; }
 
 	void updateDevice(ma_device_info deviceInfo, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
-		std::string deviceNameString(deviceInfo.name);
-		this->name = deviceNameString;
+		this->name = deviceInfo.name ? std::string(deviceInfo.name) : std::string{};
 
 		this->deviceInfo = deviceInfo;
-		this->isDefault = deviceInfo.isDefault;
+		// ensure proper bool conversion from ma_bool32
+		this->isDefault = (deviceInfo.isDefault != 0);
 		this->format = AudioFormat(format, sampleRate, channels);
 	}
 
 	AudioDevice(std::string deviceId) { this->id = deviceId; }
 	virtual ~AudioDevice() { this->sleep(); }
 
-	AudioSpeakerDevice(const std::string& deviceId) : AudioDevice(deviceId) {}
-	~AudioSpeakerDevice() { this->sleep(); }
 };

@@ -1,14 +1,18 @@
 #pragma once
-
-#include "../include.h"
+#include "../core/AudioNode.h"
 #include "../core/AudioFormat.h"
-#include "../input/AudioInput.h"
 
-class AudioOutput {
+class AudioOutput : public AudioNode {
+protected:
+    AudioFormat audioFormat;
+
 public:
-    virtual ~AudioOutput() = default;
-    virtual AudioFormat getPreferredFormat() const = 0;
-    virtual ma_result subscribe(AudioInput& in) = 0;
-    virtual void      unsubscribe(AudioInput* in) = 0;
-    virtual void      unsubscribeAll() = 0;
+    AudioOutput(AudioFormat audioFormat)
+        : audioFormat(audioFormat) {
+    }
+
+    // called by downstream consumers (speakers, file writers, etc.)
+    virtual void readPCM(void* outputBuffer, ma_uint32 frameCount) = 0;
+
+    const AudioFormat& getFormat() const { return audioFormat; }
 };

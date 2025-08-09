@@ -1,11 +1,15 @@
 #pragma once
 
-#include "../include.h"
-#include "../core/AudioFormat.h"
+#include "../core/AudioEndpoint.h"
 
-class AudioInput : public AudioNode {
+class AudioInput : public AudioEndpoint {
 public:
-    virtual ~AudioInput() = default;
-    virtual ma_data_source* dataSource() = 0;     // required
-    virtual AudioFormat     format() const = 0;   // for sanity/conversion
+    // called by upstream producers (microphones, files, streams)
+    virtual void submitPCM(const void* data, ma_uint32 frameCount) = 0;
+
+    // by default, AudioInput only outputs PCM data to whatever is subscribed
+    bool isSubscribed() override { return isOutputSubscribed(); }
+
+    ma_result subscribe(AudioOutput* destinationNode) { return subscribeOutput(destinationNode); }
+    ma_result unsubscribe() { return unsubscribeOutput(); }
 };

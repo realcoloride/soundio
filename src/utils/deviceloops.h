@@ -11,7 +11,7 @@ static void loopDevices(
 
         // get detailed device info
         ma_device_info detailedInfo;
-        if (ma_context_get_device_info(&context, ma_device_type_playback, &deviceInfo.id, &detailedInfo) != MA_SUCCESS)
+        if (ma_context_get_device_info(&context, deviceType, &deviceInfo.id, &detailedInfo) != MA_SUCCESS)
             continue;
 
         // devices with no available formats are skipped
