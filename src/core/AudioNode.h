@@ -18,6 +18,9 @@ protected:
 
     bool isInputSubscribed() { return inputNode != nullptr; }
     bool isOutputSubscribed() { return outputNode != nullptr; }
+    bool areBothSubscribed() { return isInputSubscribed() && isOutputSubscribed(); }
+
+    AudioFormat audioFormat;
 
     ma_result _subscribe(
         AudioNode*& audioNode,

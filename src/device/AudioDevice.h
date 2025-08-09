@@ -3,7 +3,7 @@
 #include "../include.h"
 #include "../core/AudioNode.h"
 
-class AudioDevice {
+class AudioDevice : public virtual AudioEndpoint {
 protected:
 	ma_device* internalDevice;
 	std::unique_ptr<ma_engine> engine;
@@ -19,7 +19,7 @@ public:
 	std::string id;
 	std::string name;
 
-	AudioFormat format;
+	AudioFormat deviceFormat;
 	ma_device_info deviceInfo;
 
 	bool isDefault = false;
@@ -30,8 +30,8 @@ public:
 
 		ma_engine_config engineConfig = ma_engine_config_init();
 		engineConfig.pPlaybackDeviceID = &deviceInfo.id;
-		engineConfig.channels = channels;
-		engineConfig.sampleRate = sampleRate;
+		engineConfig.channels = deviceFormat.channels;
+		engineConfig.sampleRate = deviceFormat.sampleRate;
 		engineConfig.dataCallback = dataCallback;
 
 		this->engine = std::make_unique<ma_engine>();
@@ -47,7 +47,7 @@ public:
 	void sleep() override {
 		if (engine) ma_engine_uninit(engine.get());
 		if (internalDevice) internalDevice = nullptr;
-		AudioDevice::sleep();
+		AudioEndpoint::sleep();
 	}
 	
 	ma_result ensureAwake() { return !this->isAwake ? wakeUp() : MA_SUCCESS; }
@@ -58,7 +58,12 @@ public:
 		this->deviceInfo = deviceInfo;
 		// ensure proper bool conversion from ma_bool32
 		this->isDefault = (deviceInfo.isDefault != 0);
-		this->format = AudioFormat(format, sampleRate, channels);
+
+		AudioFormat newFormat(format, channels, sampleRate);
+		if (deviceFormat != newFormat)
+			this->deviceFormat = newFormat;
+			this->renegotiate();
+		}
 	}
 
 	AudioDevice(std::string deviceId) { this->id = deviceId; }
