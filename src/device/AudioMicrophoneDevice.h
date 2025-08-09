@@ -1,53 +1,32 @@
-#pragma once
+    #pragma once
 
-#include "./AudioDevice.h"
-#include "../input/AudioInput.h"
-#include "../output/AudioOutput.h"
+    #include "./AudioDevice.h"
+    #include "../input/AudioInput.h"
+    #include "../output/AudioOutput.h"
 
-class AudioMicrophoneDevice : public AudioDevice, public AudioInput {
-protected:
-    // is outputnode, but type safetied
-    AudioOutput* output = nullptr;
+    class AudioMicrophoneDevice : public AudioDevice, public virtual AudioInput {
+    protected:
+        void dataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) override {
+            (void)pDevice;
+            (void)pOutput;
 
-    void dataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) override {
-        (void)pDevice;
-        (void)pOutput;
-
-        // fast exit if sleeping or not wired up
-        if (!isAwake || !isOutputSubscribed())
-            return;
+            // fast exit if sleeping or not wired up
+            if (!isAwake || !isOutputSubscribed())
+                return;
         
-        if (pInput == nullptr) {
-            SI_LOG("Mic dataCallback: pInput=null, frames=" << frameCount);
-            return;
+            if (pInput == nullptr) {
+                SI_LOG("Mic dataCallback: pInput=null, frames=" << frameCount);
+                return;
+            }
+        
+            SI_LOG("Mic dataCallback: frames=" << frameCount);
+            this->submitPCM(pInput, frameCount);
         }
-        
-        SI_LOG("Mic dataCallback: frames=" << frameCount);
-        this->submitPCM(pInput, frameCount);
-    }
 
-    ma_result handleOutputSubscribe(AudioNode* node) override {
-        // Call base if it has important behavior (format negotiation, etc.)
-        ma_result result = AudioInput::handleOutputSubscribe(node);
-        if (result != MA_SUCCESS)
-            return result;
+    public:
+        AudioMicrophoneDevice(const std::string& id, ma_context* context) : AudioDevice(id, context) {}
 
-        // outputnode is assigned automatically after this call
-        output = dynamic_cast<AudioOutput*>(node);
-        SI_LOG("Mic subscribed to output: this=" << this << " output=" << output);
-        
-        return MA_SUCCESS;
-    }
-    ma_result handleOutputUnsubscribe(AudioNode* node) override {
-        output = nullptr;
-        SI_LOG("Mic unsubscribed from output: this=" << this);
-        return AudioInput::handleOutputUnsubscribe(node);
-    }
-
-public:
-    AudioMicrophoneDevice(const std::string& id, ma_context* context) : AudioDevice(id, context) {}
-
-    // Implement pure virtuals from AudioNode via AudioEndpoint path
-    ma_data_source* dataSource() override { return nullptr; }
-    AudioFormat format() const override { return audioFormat; }
-};
+        // Implement pure virtuals from AudioNode via AudioEndpoint path
+        ma_data_source* dataSource() override { return nullptr; }
+        AudioFormat format() const override { return audioFormat; }
+    };

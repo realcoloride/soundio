@@ -2,7 +2,7 @@
 #include "./AudioDevice.h"
 #include "../output/AudioOutput.h"
 
-class AudioSpeakerDevice : public AudioDevice, public AudioOutput {
+class AudioSpeakerDevice : public AudioDevice, public virtual AudioOutput {
 protected:
     ma_pcm_rb ring{};
     bool ringInit = false;
@@ -67,7 +67,14 @@ public:
         while (remaining > 0) {
             void* writePtr = nullptr;
             ma_uint32 cap = 0;
-            if (ma_pcm_rb_acquire_write(&ring, &cap, &writePtr) != MA_SUCCESS || cap == 0) break;
+            if (ma_pcm_rb_acquire_write(&ring, &cap, &writePtr) != MA_SUCCESS) break;
+
+            if (cap == 0) {
+                // Drop oldest data to make room (overwrite policy)
+                ma_uint32 drop = std::min<ma_uint32>(remaining, count);
+                ma_pcm_rb_commit_read(&ring, drop);
+                continue;
+            }
 
             ma_uint32 chunk = (cap < remaining) ? cap : remaining;
             std::memcpy(writePtr, src, chunk * frameSize);
@@ -82,7 +89,6 @@ public:
 
     AudioSpeakerDevice(const std::string& id, ma_context* context) : AudioDevice(id, context) {}
 
-    // Implement pure virtuals from AudioNode via AudioEndpoint path
     ma_data_source* dataSource() override { return nullptr; }
     AudioFormat format() const override { return audioFormat; }
 };

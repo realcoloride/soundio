@@ -3,7 +3,7 @@
 #include "./AudioNode.h"
 #include "./AudioFormat.h"
 
-class AudioEndpoint : public AudioNode {
+class AudioEndpoint : public virtual AudioNode {
 protected:
     ma_data_converter converter{};
     bool              hasConverter = false;
@@ -66,14 +66,17 @@ protected:
     }
 
     void forwardToOutput(const void* frames, ma_uint32 frameCount) {
-        if (!outputNode) return;
-        if (auto* down = dynamic_cast<AudioEndpoint*>(outputNode)) {
-            down->receivePCM(frames, frameCount);
+        if (!outputNode) {
+            SI_LOG("forwardToOutput: no outputNode!");
+            return;
         }
+        
+        outputNode->receivePCM(frames, frameCount);
     }
 
+
 public:
-    // Call this on control thread after changing this node�s native format.
+    // Call this on control thread after changing this nodes native format.
     virtual void renegotiate() { tryNegotiate(); }
 
     // AUDIO THREAD: no allocations, no locks.

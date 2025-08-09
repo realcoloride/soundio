@@ -4,6 +4,8 @@
 #include "./AudioNode.h"
 
 class AudioNode {
+    friend class AudioEndpoint;
+
 protected:
     using IsSubscribedMethod = bool (AudioNode::*)();
     using HandleMethod = ma_result(AudioNode::*)(AudioNode*);
@@ -43,10 +45,14 @@ protected:
 
         audioNode = otherNode;
         if (otherNode) {
-            if (&audioNode == &inputNode)
-                otherNode->outputNode = this;
-            else
+            // If we're subscribing our output, wire ourselves into the other node's input.
+            if (audioNode == outputNode) {
                 otherNode->inputNode = this;
+            }
+            // If we're subscribing our input, wire ourselves into the other node's output.
+            else if (audioNode == inputNode) {
+                otherNode->outputNode = this;
+            }
         }
 
         SI_LOG("subscribe done: inputNode=" << inputNode << ", outputNode=" << outputNode);
@@ -115,6 +121,10 @@ protected:
 
     virtual ma_data_source* dataSource() = 0;
     virtual AudioFormat format() const = 0;
+    virtual void receivePCM(const void* frames, ma_uint32 frameCount) {
+        (void)frames;
+        (void)frameCount;
+    }
 
 public:
     ~AudioNode() { SI_LOG("~AudioNode(" << this << ")"); this->unsubscribeAll(); }

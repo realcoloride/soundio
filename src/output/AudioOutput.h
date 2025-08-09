@@ -2,7 +2,7 @@
 
 #include "../core/AudioEndpoint.h"
 
-class AudioInput;
+class AudioInput; // forward decl
 
 class AudioOutput : public virtual AudioEndpoint {
 public:
@@ -16,5 +16,5 @@ public:
 
 inline ma_result AudioOutput::subscribe(AudioInput* source) {
     SI_LOG("AudioOutput::subscribe <- " << source);
-    return subscribeInput((AudioNode*)source);
+    return subscribeInput(reinterpret_cast<AudioNode*>(source));
 }

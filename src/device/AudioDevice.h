@@ -17,6 +17,7 @@ protected:
 	
 	static void onDeviceData(ma_device* device, void* out, const void* in, ma_uint32 frames) {
 		auto* self = static_cast<AudioDevice*>(device->pUserData);
+		SI_LOG("onDeviceData called for: " << self->name << ", type=" << self->deviceType);
 		if (!self) return;
 		self->dataCallback(device, out, in, frames);  // calls your virtual override
 	}

@@ -1,8 +1,9 @@
 #pragma once
 
 #include "../core/AudioEndpoint.h"
+#include "../output/AudioOutput.h" 
 
-class AudioOutput;
+class AudioOutput; // forward decl
 
 class AudioInput : public virtual AudioEndpoint {
 public:
@@ -16,5 +17,9 @@ public:
 
 inline ma_result AudioInput::subscribe(AudioOutput* destination) {
     SI_LOG("AudioInput::subscribe -> " << destination);
-    return subscribeOutput((AudioNode*)destination);
+    auto r = subscribeOutput(static_cast<AudioNode*>(destination));
+    if (r == MA_SUCCESS) {
+        inputNode = this; 
+    }
+    return r;
 }

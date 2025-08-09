@@ -49,6 +49,12 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
         ar = mic->ensureAwake();
         if (ar != MA_SUCCESS) MessageBoxW(NULL, L"Mic wakeUp failed", L"Error", MB_ICONERROR);
 
+
+#include <typeinfo>
+        SI_LOG("speaker type: " << typeid(*speaker).name());
+        auto* out = dynamic_cast<AudioOutput*>(speaker);
+        SI_LOG("cast to AudioOutput*: " << out);
+
         mic->subscribe(speaker); // start the background work
     }
 
