@@ -68,18 +68,25 @@ protected:
             return MA_DEVICE_NOT_INITIALIZED;
 
         SI_LOG("unsubscribe begin: this=" << this << ", peer=" << audioNode);
-        ma_result result = (this->*handleMethod)(audioNode);
+
+        AudioNode* peer = audioNode;  // store peer
+        audioNode = nullptr;          // break the link immediately
+
+        ma_result result = (this->*handleMethod)(peer);
         if (result != MA_SUCCESS)
             return result;
 
-        if (audioNode) {
-            if (audioNode->outputNode == this)
-                audioNode->unsubscribeOutput();
-            if (audioNode->inputNode == this)
-                audioNode->unsubscribeInput();
+        if (peer) {
+            if (peer->outputNode == this) {
+                peer->outputNode = nullptr; // break other side
+                peer->handleOutputUnsubscribe(this);
+            }
+            if (peer->inputNode == this) {
+                peer->inputNode = nullptr; // break other side
+                peer->handleInputUnsubscribe(this);
+            }
         }
 
-        audioNode = nullptr;
         SI_LOG("unsubscribe done: inputNode=" << inputNode << ", outputNode=" << outputNode);
         return MA_SUCCESS;
     }

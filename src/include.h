@@ -20,6 +20,7 @@
 #include <thread>
 #include <functional>
 #include <unordered_set>
+#include <algorithm>
 #include <cstring>
 
 #ifndef SI_LOG

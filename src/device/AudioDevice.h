@@ -8,6 +8,10 @@ protected:
 	std::unique_ptr<ma_device> device = nullptr;
 	ma_context* context = nullptr;
 
+	ma_uint32 pullFromEndpoint(AudioEndpoint* ep, void* pOut, ma_uint32 frames) {
+		return ep->submitPCM(pOut, frames);
+	}
+
 	virtual void dataCallback(
 		ma_device* pDevice, 
 		void* pOutput, 

@@ -1,28 +1,24 @@
 #pragma once
-
 #include "./AudioDevice.h"
 #include "../input/AudioInput.h"
-#include "../output/AudioOutput.h"
 
 class AudioMicrophoneDevice : public AudioDevice, public virtual AudioInput {
 protected:
-    void dataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) override {
+    void dataCallback(ma_device* pDevice, void* /*pOutput*/, const void* pInput, ma_uint32 frameCount) override {
         (void)pDevice;
-        (void)pOutput;
 
-        // fast exit if sleeping or not wired up
-        if (!isAwake || !isOutputSubscribed())
+        if (!isAwake || !canFillInputRing || pInput == nullptr)
             return;
-        
-        if (pInput == nullptr) {
-            SI_LOG("Mic dataCallback: pInput=null, frames=" << frameCount);
-            return;
-        }
-        
-        SI_LOG("Mic dataCallback: frames=" << frameCount);
-        this->receivePCM(pInput, frameCount);
+
+        receivePCM(pInput, frameCount);
+        mixPCM();
     }
 
 public:
-    AudioMicrophoneDevice(const std::string& id, ma_context* context) : AudioDevice(id, context) {}
+    AudioMicrophoneDevice(const std::string& id, ma_context* context)
+        : AudioDevice(id, context)
+    {
+        canFillInputRing = true;
+        canDrainOutputRing = true; // so downstream can pull
+    }
 };
