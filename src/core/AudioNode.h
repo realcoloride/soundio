@@ -35,7 +35,6 @@ protected:
             return MA_DEVICE_ALREADY_INITIALIZED;
 
         SI_LOG("subscribe begin: this=" << this << ", other=" << otherNode);
-
         SI_LOG("is output node: " << (otherNode == outputNode));
 
         audioNode = otherNode;

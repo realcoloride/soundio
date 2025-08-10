@@ -95,12 +95,12 @@ protected:
         return result;
     }
 
-    ma_result initializeRings(ma_uint32 inputFramesMultiplier = 1, ma_uint32 outputFramesMultiplier = 1) {
+    ma_result initializeRings(ma_uint32 inputFrames, ma_uint32 outputFrames) {
         auto* inFmt = getInputFormat();
         auto* outFmt = getOutputFormat();
 
-        inputRingFrames = (inFmt ? inFmt->sampleRate : audioFormat.sampleRate) / inputFramesMultiplier;
-        outputRingFrames = (outFmt ? outFmt->sampleRate : audioFormat.sampleRate) / outputFramesMultiplier;
+        inputRingFrames = inputFrames;
+        outputRingFrames = outputFrames;
 
         ma_result result = MA_SUCCESS;
 
@@ -250,14 +250,20 @@ protected:
         auto* inFmt = getInputFormat();
         auto* outFmt = getOutputFormat();
 
-        ma_uint32 inputFrames = (inFmt ? inFmt->sampleRate : audioFormat.sampleRate) / 8; // ~8 chunks/sec
-        ma_uint32 outputFrames = (outFmt ? outFmt->sampleRate : audioFormat.sampleRate) / 8;
+        ma_uint32 inputFrames = ((inFmt ? inFmt->sampleRate : audioFormat.sampleRate) * bufferSafetyMS) / 1000;
+        ma_uint32 outputFrames = ((outFmt ? outFmt->sampleRate : audioFormat.sampleRate) * bufferSafetyMS) / 1000;
 
-        result = initializeRings();//(inputFrames, outputFrames);
+        result = initializeRings(inputFrames, outputFrames);
         this->isNegociationDone = result == MA_SUCCESS;
     }
 
 public:
+    /// <summary>
+    /// Buffer length safety in milliseconds.
+    /// Default is 50 ms.
+    /// </summary>
+    ma_uint32 bufferSafetyMS = 50;
+
     virtual ~AudioEndpoint() {
         if (hasInputToSelfConverter) ma_data_converter_uninit(&inputToSelfConverter, nullptr);
         if (hasSelfToOutputConverter) ma_data_converter_uninit(&selfToOutputConverter, nullptr);
