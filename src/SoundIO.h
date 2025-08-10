@@ -39,7 +39,7 @@ private:
 
     static inline bool initialized = false;
 
-    static inline std::map<std::string, std::unique_ptr<AudioDevice>> idToDevices;
+    static inline std::map<std::string, std::shared_ptr<AudioDevice>> idToDevices;
 
     static ma_result onDeviceInit(
         ma_device* pDevice, const ma_device_config* pConfig,
@@ -69,7 +69,7 @@ private:
         ma_uint32 sampleRate,
         ma_uint32 channels,
         T*& defaultDevice,
-        std::function<std::unique_ptr<T>()> creationCallback
+        std::function<std::shared_ptr<T>()> creationCallback
     ) {
         T* device = dynamic_cast<T*>(getDeviceById(normalizedDeviceId));
 
@@ -97,7 +97,7 @@ public:
 
 protected:
     template <typename T>
-    static void addDevice(std::unique_ptr<T> device) {
+    static void addDevice(std::shared_ptr<T> device) {
         static_assert(std::is_base_of<AudioDevice, T>::value, "T must derive from AudioDevice");
         idToDevices.emplace(device->id, std::move(device));
     }
@@ -161,9 +161,9 @@ public:
     }
 
 protected:
-    static inline std::vector<std::unique_ptr<AudioNode>> nodes;
+    static inline std::vector<std::shared_ptr<AudioNode>> nodes;
 
-    // unique_ptr cleanup happens automatically
+    // shared_ptr cleanup happens automatically
     static void clearAllNodes() { nodes.clear(); }
 
     template <typename T, typename... Args>
@@ -171,9 +171,9 @@ protected:
         static_assert(std::is_base_of<AudioNode, T>::value,
             "T must derive from AudioNode");
 
-        auto ptr = std::make_unique<T>(std::forward<Args>(args)...);
+        auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
         T* raw = ptr.get();
-        nodes.push_back(std::move(ptr)); // nodes = std::vector<std::unique_ptr<AudioNode>>
+        nodes.push_back(std::move(ptr)); // nodes = std::vector<std::shared_ptr<AudioNode>>
         return raw;
     }
 
@@ -181,21 +181,18 @@ public:
 
     // creating inputs, outputs etc
     // input
-    /*
-    static AudioFileInput* createFileInput(const std::string& path) {
+    /*static AudioFileInput* createFileInput(const std::string& path) {
         auto* input = registerNode<AudioFileInput>();
-        input->open(path);
-        // todo
+        // input->open(path);
         return input;
     }
-    static AudioStreamInput* createStreamInput(AudioFormat format) {
-        auto* input = registerNode<AudioStreamInput>();
-        // todo
-        return input;
+    */
+    static AudioStreamInput* createStreamInput(const AudioFormat& format) {
+        return registerNode<AudioStreamInput>(format);
     }
 
     // mixer
-    static AudioCombiner* createCombiner(AudioInput* input = nullptr, AudioOutput* device = nullptr) {
+    /*static AudioCombiner* createCombiner(AudioInput* input = nullptr, AudioOutput* device = nullptr) {
         
     }
     static AudioResampler* createResampler(AudioFormat outputFormat, AudioInput* input = nullptr) {
@@ -203,20 +200,26 @@ public:
     }
     static AudioPipe* createPipe() {
 
-    }
+    }*/
 
     // output
+    /*
     static AudioFileOutput* createFileOutput() {
 
     }
-    static AudioStreamOutput* createStreamOutput() {
-
+    */
+    static AudioStreamOutput* createStreamOutput(const AudioFormat& format) {
+        return registerNode<AudioStreamOutput>(format);
     }
 
     // player
     static AudioPlayer* createAudioPlayer(AudioInput* input) {
 
-    }*/
+    }
+
+    static AudioFormat createAudioFormat(ma_format format, ma_uint32 channels, ma_uint32 sampleRate) {
+        return AudioFormat(format, channels, sampleRate);
+    }
 };
 
 inline ma_result SoundIO::initialize() {
@@ -268,8 +271,8 @@ inline ma_result SoundIO::refreshDevices() {
         (ma_device_info deviceInfo, std::string normalizedDeviceId, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
             seenIds.insert(normalizedDeviceId);
 
-            auto creationCallback = [&normalizedDeviceId]() -> std::unique_ptr<AudioSpeakerDevice> {
-                return std::make_unique<AudioSpeakerDevice>(normalizedDeviceId, &context);
+            auto creationCallback = [&normalizedDeviceId]() -> std::shared_ptr<AudioSpeakerDevice> {
+                return std::make_shared<AudioSpeakerDevice>(normalizedDeviceId, &context);
             };
 
             handleDeviceLoop<AudioSpeakerDevice>(
@@ -286,8 +289,8 @@ inline ma_result SoundIO::refreshDevices() {
         (ma_device_info deviceInfo, std::string normalizedDeviceId, ma_format format, ma_uint32 sampleRate, ma_uint32 channels) {
             seenIds.insert(normalizedDeviceId);
 
-            auto creationCallback = [&normalizedDeviceId]() -> std::unique_ptr<AudioMicrophoneDevice> {
-                return std::make_unique<AudioMicrophoneDevice>(normalizedDeviceId, &context);
+            auto creationCallback = [&normalizedDeviceId]() -> std::shared_ptr<AudioMicrophoneDevice> {
+                return std::make_shared<AudioMicrophoneDevice>(normalizedDeviceId, &context);
             };
 
             handleDeviceLoop<AudioMicrophoneDevice>(

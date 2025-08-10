@@ -1,8 +1,10 @@
 #pragma once
 
-#include "../include.h"
+#include "../core/AudioFile.h"
 #include "AudioInput.h"
 
-class AudioFileInput : public AudioInput {
+/*
+class AudioFileInput : public AudioFile, public virtual AudioInput {
 
 };
+*/
