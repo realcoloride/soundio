@@ -6,5 +6,7 @@
 class AudioStreamOutput: public AudioStream, public virtual AudioOutput {
 public:
     AudioStreamOutput(const AudioFormat& format) : AudioStream(format, false, true) {}
-    ma_uint32 receivePCM(void* pOut, ma_uint32 frameCount) { return pullFromInputRing(pOut, frameCount); }
+    ma_uint32 receivePCM(void* pOut, ma_uint32 frameCount) {
+        return AudioEndpoint::pullFromEndpoint(pOut, frameCount); // drain upstream
+    }
 };

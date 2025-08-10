@@ -12,8 +12,7 @@ protected:
         if (!isAwake || !isInputSubscribed())
             return;
 
-        if (auto ep = dynamic_cast<AudioEndpoint*>(inputNode))
-            pullFromEndpoint(ep, pOutput, frameCount); // This drains mic’s outputRing
+        pullFromEndpoint(pOutput, frameCount);
     }
 
 public:

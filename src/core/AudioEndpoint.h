@@ -44,6 +44,17 @@ protected:
         return !outputNode ? nullptr : &outputNode->audioFormat;
     }
 
+    ma_uint32 pullFromEndpoint(void* pOut, ma_uint32 frames) {
+        if (auto ep = dynamic_cast<AudioEndpoint*>(inputNode))
+            return ep->submitPCM(pOut, frames);
+        return 0;
+    }
+
+    void pushToEndpoint(const void* pData, ma_uint32 frames) {
+        if (auto ep = dynamic_cast<AudioEndpoint*>(outputNode))
+            ep->receivePCM(pData, frames);
+    }
+
     ma_result buildConverters() {
         this->areConvertersReady = false;
 
