@@ -142,12 +142,22 @@ public:
         return out;
     }
 
-    static AudioMicrophoneDevice* getDefaultMicrophone() {
-        return defaultMicrophoneId.empty() ? nullptr : dynamic_cast<AudioMicrophoneDevice*>(getDeviceById(defaultMicrophoneId));
+    static AudioMicrophoneDevice* getDefaultMicrophone(bool autoWake = true) {
+        if (defaultMicrophoneId.empty())
+            return nullptr;
+
+        auto* microphone = dynamic_cast<AudioMicrophoneDevice*>(getDeviceById(defaultMicrophoneId));
+        microphone->ensureAwake();
+        return microphone;
     }
 
-    static AudioSpeakerDevice* getDefaultSpeaker() {
-        return defaultSpeakerId.empty() ? nullptr : dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultSpeakerId));
+    static AudioSpeakerDevice* getDefaultSpeaker(bool autoWake = true) {
+        if (defaultSpeakerId.empty())
+            return nullptr;
+
+        auto* speaker = dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultSpeakerId));
+        speaker->ensureAwake();
+        return speaker;
     }
 
 protected:

@@ -108,7 +108,8 @@ public:
 		if (deviceFormat != newFormat) {
 			this->deviceFormat = newFormat;
 			this->audioFormat = newFormat;
-			this->renegotiate();
+			if (this->isNegociationDone)
+				this->renegotiate();
 			SI_LOG("updateDevice: id=" << id << " default=" << isDefault << " fmt=" << format << " ch=" << channels << " sr=" << sampleRate);
 		}
 	}
