@@ -43,8 +43,8 @@ public:
                 break;
 
             ma_uint32 framesToWrite = (ma_uint32)std::min<ma_uint64>(framesRemaining, framesAvailable);
-
-            const ma_uint32 frameSize = mFormat.frameSizeBytes();
+            
+            const ma_uint32 frameSize = mFormat.frameSizeInBytes();
             memcpy(pDst, pSrc, framesToWrite * frameSize);
             ma_pcm_rb_commit_write(&ringBuffer, framesToWrite);
 
