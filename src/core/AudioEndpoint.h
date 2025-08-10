@@ -3,160 +3,192 @@
 #include "./AudioNode.h"
 #include "./AudioFormat.h"
 
+// INPUT  node v
+// MIX    self v (SUBMIT DEFINED BY NODE ITSELF)
+// OUTPUT node <
+//
+// AudioEndpoint:
+// - Always stores PCM in self format inside its FIFOs.
+// - Input FIFO: holds data from upstream (converted to self format).
+// - Output FIFO: holds data ready to be consumed by downstream.
+// - Converters rebuilt on renegotiation.
+// - mixPCM() is fixed pipeline; handleMixPCM() is the hook.
+
 class AudioEndpoint : public virtual AudioNode {
 protected:
-    ma_data_converter converter{};
-    bool              hasConverter = false;
+    // These must be enabled by derived classes
+    bool canFillInputRing = false;
+    bool canDrainOutputRing = false;
 
-    std::vector<uint8_t> scratchBuffer; // resized only during negotiation (control thread)
-    static constexpr ma_uint32 CHUNK_FRAMES = 1024;
+    bool hasInputToSelfConverter = false;
+    ma_data_converter inputToSelfConverter{};
+    bool hasSelfToOutputConverter = false;
+    ma_data_converter selfToOutputConverter{};
+    bool areConvertersReady = false;
 
-    const AudioFormat& producerFormat() const {
-        if (auto* up = dynamic_cast<AudioEndpoint*>(inputNode)) return up->audioFormat;
-        return audioFormat; // source node: use self format
+    // ring buffers
+    ma_pcm_rb inputRing{};
+    ma_pcm_rb outputRing{};
+    ma_uint32 inputRingFrames = 0;
+    ma_uint32 outputRingFrames = 0;
+
+    bool isNegociationDone = false;
+
+    AudioFormat* getInputFormat() {
+        return !inputNode ? nullptr : &inputNode->audioFormat;
     }
-    const AudioFormat& consumerFormat() const {
-        if (auto* down = dynamic_cast<AudioEndpoint*>(outputNode)) return down->audioFormat;
-        return audioFormat; // fallback (unused when no output)
+    AudioFormat* getOutputFormat() {
+        return !outputNode ? nullptr : &outputNode->audioFormat;
     }
 
-    ma_result buildConverter(const AudioFormat& inFmt, const AudioFormat& outFmt) {
-        // Control thread only (graph stopped). No allocations in audio thread.
-        if (inFmt == outFmt) {
-            SI_LOG("buildConverter: passthrough in=" << inFmt.channels << "ch@" << inFmt.sampleRate << " fmt=" << inFmt.format
-                   << " out=" << outFmt.channels << "ch@" << outFmt.sampleRate << " fmt=" << outFmt.format);
-            if (hasConverter) {
-                ma_data_converter_uninit(&converter, nullptr);
-                hasConverter = false;
-            }
-            scratchBuffer.clear();
-            return MA_SUCCESS;
+    ma_result buildConverters() {
+        this->areConvertersReady = false;
+
+        if (hasInputToSelfConverter) {
+            ma_data_converter_uninit(&inputToSelfConverter, nullptr);
+            hasInputToSelfConverter = false;
+        }
+        if (hasSelfToOutputConverter) {
+            ma_data_converter_uninit(&selfToOutputConverter, nullptr);
+            hasSelfToOutputConverter = false;
         }
 
-        if (hasConverter) {
-            ma_data_converter_uninit(&converter, nullptr);
-            hasConverter = false;
+        auto* inputFormat = getInputFormat();
+        auto* outputFormat = getOutputFormat();
+
+        ma_result result = MA_SUCCESS;
+
+        // I -> SELF
+        if (inputFormat != nullptr && audioFormat != *inputFormat) {
+            ma_data_converter_config config = ma_data_converter_config_init(
+                inputFormat->toMaFormat(),
+                audioFormat.toMaFormat(),
+                inputFormat->channels,
+                audioFormat.channels,
+                inputFormat->sampleRate,
+                audioFormat.sampleRate
+            );
+            result = ma_data_converter_init(&config, nullptr, &inputToSelfConverter);
+            hasInputToSelfConverter = result == MA_SUCCESS;
+        }
+        if (result != MA_SUCCESS) return result;
+
+        // SELF -> O
+        if (outputFormat != nullptr && audioFormat != *outputFormat) {
+            ma_data_converter_config config = ma_data_converter_config_init(
+                audioFormat.toMaFormat(),
+                outputFormat->toMaFormat(),
+                audioFormat.channels,
+                outputFormat->channels,
+                audioFormat.sampleRate,
+                outputFormat->sampleRate
+            );
+            result = ma_data_converter_init(&config, nullptr, &selfToOutputConverter);
+            hasSelfToOutputConverter = result == MA_SUCCESS;
+        }
+        if (result != MA_SUCCESS) return result;
+
+        this->areConvertersReady = hasInputToSelfConverter || hasSelfToOutputConverter;
+        return result;
+    }
+
+    ma_result initializeRings(ma_uint32 inputFrames, ma_uint32 outputFrames) {
+        inputRingFrames = inputFrames;
+        outputRingFrames = outputFrames;
+
+        ma_result result = MA_SUCCESS;
+
+        if (canFillInputRing) {
+            result = ma_pcm_rb_init(audioFormat.channels,
+                ma_get_bytes_per_sample(audioFormat.toMaFormat()),
+                inputFrames, nullptr, nullptr, &inputRing);
+            if (result != MA_SUCCESS) return result;
         }
 
-        ma_data_converter_config config = ma_data_converter_config_init(
-            inFmt.toMaFormat(),            // formatIn
-            outFmt.toMaFormat(),           // formatOut
-            inFmt.channels,                // channelsIn
-            outFmt.channels,               // channelsOut
-            inFmt.sampleRate,               // sampleRateIn
-            outFmt.sampleRate                // sampleRateOut
-        );
-        ma_result r = ma_data_converter_init(&config, nullptr, &converter);
-        if (r != MA_SUCCESS) return r;
+        if (canDrainOutputRing) {
+            result = ma_pcm_rb_init(audioFormat.channels,
+                ma_get_bytes_per_sample(audioFormat.toMaFormat()),
+                outputFrames, nullptr, nullptr, &outputRing);
+            if (result != MA_SUCCESS) return result;
+        }
 
-        hasConverter = true;
-        scratchBuffer.resize(static_cast<size_t>(CHUNK_FRAMES) * outFmt.frameSizeBytes());
-        SI_LOG("buildConverter: created converter in=" << inFmt.channels << "ch@" << inFmt.sampleRate << " fmt=" << inFmt.format
-               << " -> out=" << outFmt.channels << "ch@" << outFmt.sampleRate << " fmt=" << outFmt.format);
         return MA_SUCCESS;
     }
 
-    void tryNegotiate() {
-        if (!isOutputSubscribed()) return;
-        const AudioFormat& inFmt = producerFormat();
-        const AudioFormat& outFmt = consumerFormat();
-        SI_LOG("tryNegotiate: inFmt=" << inFmt.channels << "ch@" << inFmt.sampleRate << " fmt=" << inFmt.format
-               << " outFmt=" << outFmt.channels << "ch@" << outFmt.sampleRate << " fmt=" << outFmt.format);
-        (void)buildConverter(inFmt, outFmt);
-    }
+    // INPUT -> SELF (push into input ring)
+    void receivePCM(const void* pData, ma_uint32 frameCount) {
+        if (!canFillInputRing) return;
 
-    void forwardToOutput(const void* frames, ma_uint32 frameCount) {
-        if (!outputNode) {
-            SI_LOG("forwardToOutput: no outputNode!");
-            return;
+        if (hasInputToSelfConverter) {
+            std::vector<uint8_t> temp(audioFormat.frameSizeInBytes(frameCount));
+            ma_uint64 inFrames = frameCount;
+            ma_uint64 outFrames = frameCount;
+            ma_data_converter_process_pcm_frames(&inputToSelfConverter, pData, &inFrames, temp.data(), &outFrames);
+            ma_pcm_rb_write(&inputRing, temp.data(), (ma_uint32)outFrames);
         }
-        
-        outputNode->receivePCM(frames, frameCount);
-    }
-
-
-public:
-    // Call this on control thread after changing this nodes native format.
-    virtual void renegotiate() { tryNegotiate(); }
-
-    // AUDIO THREAD: no allocations, no locks.
-    void submitPCM(const void* inFrames, ma_uint32 inFrameCount) {
-        if (!isOutputSubscribed() || inFrameCount == 0) return;
-
-        if (!hasConverter) {
-            SI_LOG("submitPCM passthrough: frames=" << inFrameCount);
-            forwardToOutput(inFrames, inFrameCount);
-            return;
+        else {
+            ma_pcm_rb_write(&inputRing, pData, frameCount);
         }
 
-        // Convert in chunks using preallocated scratch.
-        const AudioFormat& inFmt = producerFormat();
-        (void)inFmt; // For clarity; converter already encodes formats.
+        whenInputSubmitted();
+    }
 
-        const uint8_t* src = static_cast<const uint8_t*>(inFrames);
-        ma_uint64 inLeft = inFrameCount;
+    // SELF -> OUTPUT (pull from output ring)
+    ma_uint32 submitPCM(void* pOut, ma_uint32 frameCount) {
+        if (!canDrainOutputRing) return 0;
+        ma_uint32 framesRead = ma_pcm_rb_read(&outputRing, pOut, frameCount);
+        whenOutputSubmitted();
+        return framesRead;
+    }
 
-        while (inLeft > 0) {
-            ma_uint64 inToProcess = std::min<ma_uint64>(inLeft, CHUNK_FRAMES);
-            ma_uint64 outProduced = CHUNK_FRAMES;
-            ma_result r = ma_data_converter_process_pcm_frames(
-                &converter,
-                scratchBuffer.data(), &outProduced,
-                (void**)&src, &inToProcess
-            );
-            if (outProduced > 0) {
-                forwardToOutput(scratchBuffer.data(), static_cast<ma_uint32>(outProduced));
-            }
-            if (r != MA_SUCCESS) { SI_LOG("submitPCM convert error: r=" << r); break; }
-            inLeft -= inToProcess;
+    // Fixed mix pipeline: input ring -> conversion -> output ring
+    ma_result mixPCM() {
+        if (!canFillInputRing || !canDrainOutputRing)
+            return MA_INVALID_OPERATION;
+
+        ma_uint32 available = ma_pcm_rb_available_read(&inputRing);
+        if (available == 0)
+            return MA_NO_DATA_AVAILABLE;
+
+        std::vector<uint8_t> temp(audioFormat.frameSizeInBytes(available));
+        ma_pcm_rb_read(&inputRing, temp.data(), available);
+
+        if (hasSelfToOutputConverter) {
+            std::vector<uint8_t> converted(audioFormat.frameSizeInBytes(available)); // adjust if conversion changes frames
+            ma_uint64 inFrames = available;
+            ma_uint64 outFrames = available;
+            ma_result res = ma_data_converter_process_pcm_frames(&selfToOutputConverter, temp.data(), &inFrames, converted.data(), &outFrames);
+            if (res != MA_SUCCESS) return res;
+            ma_pcm_rb_write(&outputRing, converted.data(), (ma_uint32)outFrames);
         }
+        else {
+            ma_pcm_rb_write(&outputRing, temp.data(), available);
+        }
+
+        return handleMixPCM(MA_SUCCESS);
     }
 
-    // Default mid-node behavior: just pass through.
-    // Sinks (speaker/file) override this to actually consume.
-    virtual void receivePCM(const void* frames, ma_uint32 frameCount) {
-        (void)frames; SI_LOG("receivePCM: frameCount=" << frameCount << " this=" << this);
-        forwardToOutput(frames, frameCount);
+    // Overridable hook for custom processing
+    virtual ma_result handleMixPCM(ma_result prevResult) {
+        (void)prevResult;
+        return MA_SUCCESS;
     }
 
-protected:
-    // Link hooks (CONTROL THREAD ONLY).
-    ma_result handleInputSubscribe(AudioNode* src) override {
-        SI_LOG("handleInputSubscribe: this=" << this << " src=" << src);
-        ma_result r = AudioNode::handleInputSubscribe(src);
-        if (r == MA_SUCCESS) tryNegotiate();
-        return r;
-    }
-    ma_result handleOutputSubscribe(AudioNode* dst) override {
-        SI_LOG("handleOutputSubscribe: this=" << this << " dst=" << dst);
-        ma_result r = AudioNode::handleOutputSubscribe(dst);
-        if (r == MA_SUCCESS) tryNegotiate();
-        return r;
-    }
-    ma_result handleInputUnsubscribe(AudioNode* src) override {
-        SI_LOG("handleInputUnsubscribe: this=" << this << " src=" << src);
-        if (hasConverter) {
-            ma_data_converter_uninit(&converter, nullptr);
-            hasConverter = false;
-            scratchBuffer.clear();
-        }
-        return AudioNode::handleInputUnsubscribe(src);
-    }
-    ma_result handleOutputUnsubscribe(AudioNode* dst) override {
-        SI_LOG("handleOutputUnsubscribe: this=" << this << " dst=" << dst);
-        if (hasConverter) {
-            ma_data_converter_uninit(&converter, nullptr);
-            hasConverter = false;
-            scratchBuffer.clear();
-        }
-        return AudioNode::handleOutputUnsubscribe(dst);
+    // Hooks for node-specific events
+    virtual void whenInputSubmitted() {}
+    virtual void whenOutputSubmitted() {}
+
+    void renegotiate() {
+        this->isNegociationDone = false;
+        ma_result result = buildConverters();
+        this->isNegociationDone = result == MA_SUCCESS;
     }
 
 public:
     virtual ~AudioEndpoint() {
-        if (hasConverter) {
-            ma_data_converter_uninit(&converter, nullptr);
-            hasConverter = false;
-        }
+        if (hasInputToSelfConverter) ma_data_converter_uninit(&inputToSelfConverter, nullptr);
+        if (hasSelfToOutputConverter) ma_data_converter_uninit(&selfToOutputConverter, nullptr);
+        ma_pcm_rb_uninit(&inputRing);
+        ma_pcm_rb_uninit(&outputRing);
     }
 };

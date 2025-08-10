@@ -35,6 +35,7 @@ protected:
             return MA_DEVICE_ALREADY_INITIALIZED;
 
         SI_LOG("subscribe begin: this=" << this << ", other=" << otherNode);
+
         ma_result result = (this->*handleMethod)(otherNode);
         if (result != MA_SUCCESS)
             return result;
@@ -43,21 +44,20 @@ protected:
             (otherNode->*otherHandleMethod)(this);
         }
 
+        SI_LOG("is output node: " << (otherNode == outputNode));
+
         audioNode = otherNode;
         if (otherNode) {
-            // If we're subscribing our output, wire ourselves into the other node's input.
-            if (audioNode == outputNode) {
+            if (otherNode == outputNode)
                 otherNode->inputNode = this;
-            }
-            // If we're subscribing our input, wire ourselves into the other node's output.
-            else if (audioNode == inputNode) {
+            else
                 otherNode->outputNode = this;
-            }
         }
 
         SI_LOG("subscribe done: inputNode=" << inputNode << ", outputNode=" << outputNode);
         return MA_SUCCESS;
     }
+
 
     ma_result _unsubscribe(
         AudioNode*& audioNode,
@@ -117,13 +117,6 @@ protected:
     void unsubscribeAll() {
         this->unsubscribeInput();
         this->unsubscribeOutput();
-    }
-
-    virtual ma_data_source* dataSource() = 0;
-    virtual AudioFormat format() const = 0;
-    virtual void receivePCM(const void* frames, ma_uint32 frameCount) {
-        (void)frames;
-        (void)frameCount;
     }
 
 public:
