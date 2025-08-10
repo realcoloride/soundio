@@ -1,4 +1,5 @@
 #pragma once
+
 #include "./AudioEndpoint.h"
 
 class AudioStream : public AudioEndpoint {

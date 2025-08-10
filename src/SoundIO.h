@@ -181,12 +181,9 @@ public:
 
     // creating inputs, outputs etc
     // input
-    /*static AudioFileInput* createFileInput(const std::string& path) {
-        auto* input = registerNode<AudioFileInput>();
-        // input->open(path);
-        return input;
+    static AudioFileInput* createFileInput() {
+        return registerNode<AudioFileInput>();
     }
-    */
     static AudioStreamInput* createStreamInput(const AudioFormat& format) {
         return registerNode<AudioStreamInput>(format);
     }
@@ -203,11 +200,10 @@ public:
     }*/
 
     // output
-    /*
+    
     static AudioFileOutput* createFileOutput() {
-
+        return registerNode<AudioFileOutput>();
     }
-    */
     static AudioStreamOutput* createStreamOutput(const AudioFormat& format) {
         return registerNode<AudioStreamOutput>(format);
     }
