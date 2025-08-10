@@ -16,7 +16,6 @@
 
 class AudioEndpoint : public virtual AudioNode {
 protected:
-    // These must be enabled by derived classes
     bool canFillInputRing = false;
     bool canDrainOutputRing = false;
 
@@ -26,7 +25,6 @@ protected:
     ma_data_converter selfToOutputConverter{};
     bool areConvertersReady = false;
 
-    // ring buffers
     ma_pcm_rb inputRing{};
     ma_pcm_rb outputRing{};
     ma_uint32 inputRingFrames = 0;
@@ -55,7 +53,6 @@ protected:
 
         auto* inputFormat = getInputFormat();
         auto* outputFormat = getOutputFormat();
-
         ma_result result = MA_SUCCESS;
 
         // I -> SELF
@@ -99,23 +96,51 @@ protected:
         ma_result result = MA_SUCCESS;
 
         if (canFillInputRing) {
-            result = ma_pcm_rb_init(audioFormat.channels,
-                ma_get_bytes_per_sample(audioFormat.toMaFormat()),
-                inputFrames, nullptr, nullptr, &inputRing);
+            result = ma_pcm_rb_init(
+                audioFormat.toMaFormat(),
+                audioFormat.channels,
+                inputFrames,
+                nullptr, nullptr, &inputRing
+            );
             if (result != MA_SUCCESS) return result;
         }
 
         if (canDrainOutputRing) {
-            result = ma_pcm_rb_init(audioFormat.channels,
-                ma_get_bytes_per_sample(audioFormat.toMaFormat()),
-                outputFrames, nullptr, nullptr, &outputRing);
+            result = ma_pcm_rb_init(
+                audioFormat.toMaFormat(),
+                audioFormat.channels,
+                outputFrames,
+                nullptr, nullptr, &outputRing
+            );
             if (result != MA_SUCCESS) return result;
         }
 
         return MA_SUCCESS;
     }
 
-    // INPUT -> SELF (push into input ring)
+    // Helper: write into ring buffer
+    void writeRing(ma_pcm_rb& rb, const void* pData, ma_uint32 frames) {
+        void* pDest;
+        ma_uint32 writable = frames;
+        if (ma_pcm_rb_acquire_write(&rb, &writable, &pDest) == MA_SUCCESS && writable > 0) {
+            memcpy(pDest, pData, writable * audioFormat.frameSizeInBytes());
+            ma_pcm_rb_commit_write(&rb, writable);
+        }
+    }
+
+    // Helper: read from ring buffer
+    ma_uint32 readRing(ma_pcm_rb& rb, void* pOut, ma_uint32 frames) {
+        void* pSrc;
+        ma_uint32 readable = frames;
+        if (ma_pcm_rb_acquire_read(&rb, &readable, &pSrc) == MA_SUCCESS && readable > 0) {
+            memcpy(pOut, pSrc, readable * audioFormat.frameSizeInBytes());
+            ma_pcm_rb_commit_read(&rb, readable);
+        }
+        return readable;
+    }
+
+
+    // INPUT -> SELF
     void receivePCM(const void* pData, ma_uint32 frameCount) {
         if (!canFillInputRing) return;
 
@@ -123,25 +148,27 @@ protected:
             std::vector<uint8_t> temp(audioFormat.frameSizeInBytes(frameCount));
             ma_uint64 inFrames = frameCount;
             ma_uint64 outFrames = frameCount;
-            ma_data_converter_process_pcm_frames(&inputToSelfConverter, pData, &inFrames, temp.data(), &outFrames);
-            ma_pcm_rb_write(&inputRing, temp.data(), (ma_uint32)outFrames);
+            ma_data_converter_process_pcm_frames(
+                &inputToSelfConverter, pData, &inFrames, temp.data(), &outFrames
+            );
+            writeRing(inputRing, temp.data(), (ma_uint32)outFrames);
         }
         else {
-            ma_pcm_rb_write(&inputRing, pData, frameCount);
+            writeRing(inputRing, pData, frameCount);
         }
 
         whenInputSubmitted();
     }
 
-    // SELF -> OUTPUT (pull from output ring)
+    // SELF -> OUTPUT
     ma_uint32 submitPCM(void* pOut, ma_uint32 frameCount) {
         if (!canDrainOutputRing) return 0;
-        ma_uint32 framesRead = ma_pcm_rb_read(&outputRing, pOut, frameCount);
+        ma_uint32 framesRead = readRing(outputRing, pOut, frameCount);
         whenOutputSubmitted();
         return framesRead;
     }
 
-    // Fixed mix pipeline: input ring -> conversion -> output ring
+    // SELF pipeline
     ma_result mixPCM() {
         if (!canFillInputRing || !canDrainOutputRing)
             return MA_INVALID_OPERATION;
@@ -151,30 +178,30 @@ protected:
             return MA_NO_DATA_AVAILABLE;
 
         std::vector<uint8_t> temp(audioFormat.frameSizeInBytes(available));
-        ma_pcm_rb_read(&inputRing, temp.data(), available);
+        readRing(inputRing, temp.data(), available);
 
         if (hasSelfToOutputConverter) {
-            std::vector<uint8_t> converted(audioFormat.frameSizeInBytes(available)); // adjust if conversion changes frames
+            std::vector<uint8_t> converted(audioFormat.frameSizeInBytes(available)); // adjust if needed
             ma_uint64 inFrames = available;
             ma_uint64 outFrames = available;
-            ma_result res = ma_data_converter_process_pcm_frames(&selfToOutputConverter, temp.data(), &inFrames, converted.data(), &outFrames);
+            ma_result res = ma_data_converter_process_pcm_frames(
+                &selfToOutputConverter, temp.data(), &inFrames, converted.data(), &outFrames
+            );
             if (res != MA_SUCCESS) return res;
-            ma_pcm_rb_write(&outputRing, converted.data(), (ma_uint32)outFrames);
+            writeRing(outputRing, converted.data(), (ma_uint32)outFrames);
         }
         else {
-            ma_pcm_rb_write(&outputRing, temp.data(), available);
+            writeRing(outputRing, temp.data(), available);
         }
 
         return handleMixPCM(MA_SUCCESS);
     }
 
-    // Overridable hook for custom processing
     virtual ma_result handleMixPCM(ma_result prevResult) {
         (void)prevResult;
         return MA_SUCCESS;
     }
 
-    // Hooks for node-specific events
     virtual void whenInputSubmitted() {}
     virtual void whenOutputSubmitted() {}
 
