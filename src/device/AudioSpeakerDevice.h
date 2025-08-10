@@ -6,7 +6,7 @@
 
 class AudioSpeakerDevice : public AudioDevice, public virtual AudioOutput {
 protected:
-    void dataCallback(ma_device* pDevice, void* pOutput , const void* pInput, ma_uint32 frameCount) override {
+    void dataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount) override {
         (void)pDevice;
 
         if (!isAwake || !isInputSubscribed())

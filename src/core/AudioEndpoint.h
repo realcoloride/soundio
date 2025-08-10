@@ -95,7 +95,7 @@ protected:
         return result;
     }
 
-    ma_result initializeRings(ma_uint32 inputFramesMultiplier = 8, ma_uint32 outputFramesMultiplier = 8) {
+    ma_result initializeRings(ma_uint32 inputFramesMultiplier = 1, ma_uint32 outputFramesMultiplier = 1) {
         auto* inFmt = getInputFormat();
         auto* outFmt = getOutputFormat();
 
@@ -170,9 +170,12 @@ protected:
         if (!canFillInputRing) return;
 
         if (hasInputToSelfConverter) {
-            std::vector<uint8_t> temp(audioFormat.frameSizeInBytes(frameCount));
+            const AudioFormat& outFmt = audioFormat; // converter output format
+            std::vector<uint8_t> temp(outFmt.frameSizeInBytes(frameCount));
             ma_uint64 inF = frameCount, outF = frameCount;
-            ma_data_converter_process_pcm_frames(&inputToSelfConverter, pData, &inF, temp.data(), &outF);
+            ma_data_converter_process_pcm_frames(&inputToSelfConverter,
+                pData, &inF,
+                temp.data(), &outF);
             writeRing(inputRing, inputRingFormat, temp.data(), (ma_uint32)outF);
         }
         else {
@@ -202,15 +205,25 @@ protected:
         readRing(inputRing, inputRingFormat, temp.data(), available);
 
         if (hasSelfToOutputConverter) {
-            std::vector<uint8_t> converted(audioFormat.frameSizeInBytes(available));
-            ma_uint64 inF = available, outF = available;
-            ma_result res = ma_data_converter_process_pcm_frames(&selfToOutputConverter, temp.data(), &inF, converted.data(), &outF);
+            ma_uint64 inF = available;
+            ma_uint64 outF = 0;
+            ma_data_converter_get_expected_output_frame_count(
+                &selfToOutputConverter, inF, &outF);
+
+            // allocate for outputRingFormat, not audioFormat
+            std::vector<uint8_t> converted(
+                outputRingFormat.frameSizeInBytes((ma_uint32)outF));
+
+            ma_result res = ma_data_converter_process_pcm_frames(
+                &selfToOutputConverter,
+                temp.data(), &inF,
+                converted.data(), &outF);
             if (res != MA_SUCCESS) return res;
+
             writeRing(outputRing, outputRingFormat, converted.data(), (ma_uint32)outF);
         }
-        else {
-            writeRing(outputRing, outputRingFormat, temp.data(), available);
-        }
+
+        else writeRing(outputRing, outputRingFormat, temp.data(), available);
         return handleMixPCM(MA_SUCCESS);
     }
 
@@ -221,7 +234,7 @@ protected:
 
     virtual ma_result handleMixPCM(ma_result prevResult) { (void)prevResult; return MA_SUCCESS; }
     virtual void whenInputSubmitted() {}
-    virtual void whenOutputSubmitted() {}
+    virtual void whenOutputSubmitted() {}   
 
     void renegotiate() {
         this->isNegociationDone = false;
@@ -240,7 +253,7 @@ protected:
         ma_uint32 inputFrames = (inFmt ? inFmt->sampleRate : audioFormat.sampleRate) / 8; // ~8 chunks/sec
         ma_uint32 outputFrames = (outFmt ? outFmt->sampleRate : audioFormat.sampleRate) / 8;
 
-        result = initializeRings(inputFrames, outputFrames);
+        result = initializeRings();//(inputFrames, outputFrames);
         this->isNegociationDone = result == MA_SUCCESS;
     }
 

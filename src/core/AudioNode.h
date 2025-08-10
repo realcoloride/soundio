@@ -36,14 +36,6 @@ protected:
 
         SI_LOG("subscribe begin: this=" << this << ", other=" << otherNode);
 
-        ma_result result = (this->*handleMethod)(otherNode);
-        if (result != MA_SUCCESS)
-            return result;
-
-        if (otherNode) {
-            (otherNode->*otherHandleMethod)(this);
-        }
-
         SI_LOG("is output node: " << (otherNode == outputNode));
 
         audioNode = otherNode;
@@ -54,8 +46,15 @@ protected:
                 otherNode->outputNode = this;
         }
 
+        ma_result result = (this->*handleMethod)(otherNode);
+        if (result != MA_SUCCESS)
+            return result;
+
+        if (otherNode)
+            (otherNode->*otherHandleMethod)(this);
+
         SI_LOG("subscribe done: inputNode=" << inputNode << ", outputNode=" << outputNode);
-        return MA_SUCCESS;
+        return result;
     }
 
 
