@@ -5,9 +5,11 @@
 
 # Intro
 
-**SoundIO** (**Sound** **I**nput **O**utput) is a simple agnostic cross-platform header only high level node based audio graph library written in C++ using `miniaudio.h`.
+**SoundIO** (**Sound** **I**nput/**O**utput) is a header-only, cross-platform, high-level audio library for C++ built on top of miniaudio.
 
-It wraps the miniaudio api into a node based graph high level easy with classes to use audio library without the hassle of handling low level or device management and memory safety.
+It gives you a **node-based** audio graph abstraction so you can connect audio inputs, outputs, files and manage playback without worrying about low-level device handling, memory safety, or backend quirks for those who want to work with audio quickly and easily.
+
+Works anywhere miniaudio works - from desktop to mobile to the web.
 
 # Features
 
@@ -78,7 +80,7 @@ auto* file = SoundIO::createFileInput();
 ma_result result = file->open("sample.mp3");
 
 // if the file was successfully loaded
-if (ma_result == MA_SUCCESS) 
+if (result == MA_SUCCESS) 
     // the output of the file will be drained to the speaker.
     file->subscribe(speaker);
 
@@ -119,7 +121,7 @@ auto* file = SoundIO::createFileOutput();
 ma_result result = file->open("recording.pcm", mic->deviceFormat);
 
 // if the file was successfully loaded
-if (ma_result == MA_SUCCESS) 
+if (result == MA_SUCCESS) 
     // the output of the microphone will be saved to the file automatically.
     microphone->subscribe(file);
 ```

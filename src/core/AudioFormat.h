@@ -3,6 +3,7 @@
 #include "../include.h"
 
 struct AudioFormat {
+    ma_encoding_format_wav encodingFormat = ma_encoding_format_wav; // default
     ma_format  format = ma_format_f32;
     ma_uint32  channels = 2;
     ma_uint32  sampleRate = 48000;
