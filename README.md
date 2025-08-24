@@ -22,7 +22,7 @@ Not yet :v
 # Features
 
 - **Header-only**, modern `C++17+`, no extra library required
-- **Extremely simple API**, node-based graph, subscriptions based calls
+- **Extremely simple API**, node-based graph, subscription based calls
 - **Low memory footprint and low overhead**, simply wrapping miniaudio
 - **Format negociation built-in**, no need to resample or convert between inputs and outputs
 - **Supports for input and output devices**, microphones and speakers, for all platforms are built in, with ability to fetch them with a normalized id for all platforms
@@ -46,7 +46,6 @@ Not yet :v
 - [Documentation](#documentation)
 - [Building](#building)
 - [Disclaimer](#disclaimer)
-          - [© *(real)Coloride - 2025, Licensed MIT.*](#-realcoloride---2025-licensed-mit)
 
 ### Remaining features
 <details> <summary>Click to see the remaining features...</summary>
@@ -189,4 +188,4 @@ More examples are available [here](https://github.com/realcoloride/soundio/tree/
 
 ☕ **Want to support me?** You can send me a coffee on ko.fi: https://ko-fi.com/coloride.
 
-###### © *(real)Coloride - 2025, Licensed MIT.*
+© *(real)Coloride - 2025, Licensed MIT.*
