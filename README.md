@@ -22,11 +22,13 @@ Not yet :v
 # Features
 
 - **Header-only**, modern `C++17+`, no extra library required
-- Extremely simple API, node-based graph
-- Supports for input and output devices
-- File playback and recording (WAV, MP3, OGG, PCM)
-- Mixing, combining, resampling
-- Runs anywhere miniaudio runs: Windows, macOS, Linux, Android, iOS, Web
+- **Extremely simple API**, node-based graph, subscriptions based calls
+- **Low memory footprint and low overhead**, simply wrapping miniaudio
+- **Format negociation built-in**, no need to resample or convert between inputs and outputs
+- **Supports for input and output devices**, microphones and speakers, for all platforms are built in, with ability to fetch them with a normalized id for all platforms
+- **File playback and recording**, (WAV, MP3, OGG, PCM) - support for the following formats are out of the box
+- **Mixing, combining, resampling, playback**, built-in for complex but easy-to-use audio manipulation
+- **Runs anywhere miniaudio runs**: Windows, macOS, Linux, Android, iOS, Web _(see supported backends below)_
 
 # Table of contents
 - [SoundIO](#soundio)
