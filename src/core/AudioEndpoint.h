@@ -162,8 +162,7 @@ protected:
 
     // Read from a ring buffer using acquire/commit
     ma_uint32 readRing(ma_pcm_rb& rb, const AudioFormat& fmt, void* pOut, ma_uint32 frames) {
-        if (pOut == nullptr) return 0;
-
+        if (pOut == nullptr || fmt.sampleRate == 0) return 0;
         ma_uint32 totalRead = 0;
         ma_uint32 framesToRead = frames;
 

@@ -46,9 +46,8 @@ public:
     ma_result prepareOpen(const std::string& path, ma_result(*checkMethod)(const std::string&)) {
         ma_result result = checkMethod(path);
         
-        if (result == MA_SUCCESS) {
+        if (result == MA_SUCCESS)
             filePath = path;
-        }
 
         return result;
     }
@@ -57,14 +56,16 @@ public:
         closeDecoder();
         bufferStatus = MA_SUCCESS;
 
-        ma_decoder_config* config = NULL;
-        if (this->isInputSubscribed()) {
-            auto* inputFormat = this->getInputFormat();
-            ma_decoder_config decoderConfig = ma_decoder_config_init(inputFormat->format, inputFormat->channels, inputFormat->sampleRate);
-            config = &decoderConfig;
-        }
+        if (!this->isOutputSubscribed()) return MA_NOT_CONNECTED;
 
-        ma_result result = ma_decoder_init_file(filePath.c_str(), NULL, &decoder);
+        auto* outputFormat = this->getOutputFormat();
+        ma_decoder_config config = ma_decoder_config_init(
+            outputFormat->format, 
+            outputFormat->channels, 
+            outputFormat->sampleRate
+        );
+
+        ma_result result = ma_decoder_init_file(filePath.c_str(), &config, &decoder);
         if (result == MA_SUCCESS) {
             hasDecoder = true;
 

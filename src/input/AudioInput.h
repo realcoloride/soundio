@@ -16,10 +16,5 @@ public:
 };
 
 inline ma_result AudioInput::subscribe(AudioOutput* destination) {
-    SI_LOG("AudioInput::subscribe -> " << destination);
-    auto r = subscribeOutput(static_cast<AudioNode*>(destination));
-    if (r == MA_SUCCESS) {
-        inputNode = this; 
-    }
-    return r;
+    return subscribeOutput(static_cast<AudioNode*>(destination));
 }

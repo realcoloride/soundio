@@ -5,20 +5,51 @@
 
 # Intro
 
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **SoundIO** (**Sound** **I**nput/**O**utput) is a header-only, cross-platform, high-level audio library for C++ built on top of miniaudio.
 
 It gives you a **node-based** audio graph abstraction so you can connect audio inputs, outputs, files and manage playback without worrying about low-level device handling, memory safety, or backend quirks for those who want to work with audio quickly and easily.
 
-Works anywhere miniaudio works - from desktop to mobile to the web.
+Works anywhere miniaudio works - from desktop to mobile to the web;
+
+***Because simple audio shouldn't be such a headache.***
+
+# Demo
+
+Not yet :v
 
 # Features
 
+- **Header-only**, modern `C++17+`, no extra library required
+- Extremely simple API, node-based graph
+- Supports for input and output devices
+- File playback and recording (WAV, MP3, OGG, PCM)
+- Mixing, combining, resampling
+- Runs anywhere miniaudio runs: Windows, macOS, Linux, Android, iOS, Web
+
+# Table of contents
+- [SoundIO](#soundio)
+- [Intro](#intro)
+- [Demo](#demo)
+- [Features](#features)
+- [Table of contents](#table-of-contents)
+    - [Remaining features](#remaining-features)
+      - [File Features](#file-features)
+    - [Mixing Features](#mixing-features)
+    - [Playback](#playback)
+    - [Other](#other)
+- [Specifications](#specifications)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Documentation](#documentation)
+- [Building](#building)
+- [Disclaimer](#disclaimer)
 
 ### Remaining features
+<details> <summary>Click to see the remaining features...</summary>
 
 #### File Features
-* `AudioFile.h` - Base class for handling files
-* `AudioFileInput.h` - Imports file data
 * `AudioFileOutput.h` - Exports file data
 
 ### Mixing Features
@@ -29,8 +60,12 @@ Works anywhere miniaudio works - from desktop to mobile to the web.
 ### Playback
 * `AudioPlayer.h` - Manages the playback of an input into the output
 
+### Other
+
 Shutting down, finishing the SoundIO.h class, cleaning up code, documenting methods,
 QA + Testing and example scripts should be written.
+
+</details>
 
 # Specifications
 
@@ -53,8 +88,6 @@ QA + Testing and example scripts should be written.
 
 # Installation
 
-
-
 # Usage
 
 To use SoundIO, simply include the header file.
@@ -70,6 +103,9 @@ ma_result result = SoundIO::initialize();
 // shutting down (when done to clean up)
 ma_result result = SoundIO::shutdown();
 ```
+
+> [!WARNING]
+> To create SoundIO instances, it is **required** that you use `SoundIO::create*` because their memory management will be handled by SoundIO.
 
 Playing a file
 
@@ -129,6 +165,15 @@ if (result == MA_SUCCESS)
 ```
 
 More examples are available [here](https://github.com/realcoloride/soundio/tree/main/examples/).
+
+# Documentation
+
+<details> <summary>Click here to see the full documentation</summary>
+
+
+
+</details>
+
 
 # Building
 

@@ -11,19 +11,14 @@ protected:
         std::vector<uint8_t> buffer(audioFormat.frameSizeInBytes(frameCount));
         ma_uint32 framesRead = 0;
         
-        SI_LOG("frame count " << frameCount);
-
         bufferStatus = readFromFile(buffer.data(), frameCount, &framesRead);
-
         if (bufferStatus == MA_SUCCESS && framesRead > 0) {
             receivePCM(buffer.data(), framesRead);
             mixPCM();
         }
     }
 
-    void whenRenegotiated() override {
-        openDecoder();
-    }
+    void whenRenegotiated() override { openDecoder(); }
 
 public:
     AudioFileInput() : AudioFile(true, false) {
