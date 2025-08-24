@@ -3,9 +3,9 @@
 > [!WARNING]
 > 🔨 Work in progress
 
-# Intro
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
+[![License](https://img.shields.io/badge/MIT-green?style=for-the-badge
+)](LICENSE) 
 
 **SoundIO** (**Sound** **I**nput/**O**utput) is a header-only, cross-platform, high-level audio library for C++ built on top of miniaudio.
 
@@ -30,7 +30,6 @@ Not yet :v
 
 # Table of contents
 - [SoundIO](#soundio)
-- [Intro](#intro)
 - [Demo](#demo)
 - [Features](#features)
 - [Table of contents](#table-of-contents)
@@ -45,6 +44,7 @@ Not yet :v
 - [Documentation](#documentation)
 - [Building](#building)
 - [Disclaimer](#disclaimer)
+          - [© *(real)Coloride - 2025, Licensed MIT.*](#-realcoloride---2025-licensed-mit)
 
 ### Remaining features
 <details> <summary>Click to see the remaining features...</summary>
@@ -180,3 +180,11 @@ More examples are available [here](https://github.com/realcoloride/soundio/tree/
 
 
 # Disclaimer
+
+🚀 If you have an issue or idea, let me know in the [**Issues**](https://github.com/realcoloride/soundio/issues) section.
+
+📜 If you use this library, you also bound by the terms of [`miniaudio.h`'s "MIT No Attribution" (MIT-0) license](https://github.com/aws/mit-0) and this library's [MIT LICENSE](LICENSE).
+
+☕ **Want to support me?** You can send me a coffee on ko.fi: https://ko-fi.com/coloride.
+
+###### © *(real)Coloride - 2025, Licensed MIT.*
