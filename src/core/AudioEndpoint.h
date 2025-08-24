@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "./AudioNode.h"
 #include "./AudioFormat.h"
@@ -16,6 +16,7 @@
 
 class AudioEndpoint : public virtual AudioNode {
     friend class AudioDevice;
+    friend class AudioFile;
 
 protected:
     bool canFillInputRing = false;
@@ -65,10 +66,13 @@ protected:
         if (hasSelfToOutputConverter) {
             ma_data_converter_uninit(&selfToOutputConverter, nullptr);
             hasSelfToOutputConverter = false;
-        }
 
+        }
+        
         auto* inputFormat = getInputFormat();
         auto* outputFormat = getOutputFormat();
+        if (hasSelfToOutputConverter)
+            printf("Converter enabled: %uHz → %uHz\n", audioFormat.sampleRate, outputFormat->sampleRate);
 
         ma_result result = MA_SUCCESS;
 
@@ -158,11 +162,14 @@ protected:
 
     // Read from a ring buffer using acquire/commit
     ma_uint32 readRing(ma_pcm_rb& rb, const AudioFormat& fmt, void* pOut, ma_uint32 frames) {
+        if (pOut == nullptr) return 0;
+
         ma_uint32 totalRead = 0;
         ma_uint32 framesToRead = frames;
 
         while (framesToRead > 0) {
             void* pSrc = nullptr;
+
             ma_uint32 readable = framesToRead;
             if (ma_pcm_rb_acquire_read(&rb, &readable, &pSrc) != MA_SUCCESS || readable == 0) break;
 
@@ -192,14 +199,14 @@ protected:
         else {
             writeRing(inputRing, inputRingFormat, pData, frameCount);
         }
-        whenInputSubmitted();
+        whenInputSubmitted(pData, frameCount);
     }
 
     // SELF -> OUTPUT
     ma_uint32 submitPCM(void* pOut, ma_uint32 frameCount) {
         if (!canDrainOutputRing) return 0;
         ma_uint32 read = readRing(outputRing, outputRingFormat, pOut, frameCount);
-        whenOutputSubmitted();
+        whenOutputSubmitted(pOut, frameCount);
         return read;
     }
 
@@ -244,11 +251,13 @@ protected:
     ma_result handleOutputUnsubscribe(AudioNode*) override { renegotiate(); return MA_SUCCESS; }
 
     virtual ma_result handleMixPCM(ma_result prevResult) { (void)prevResult; return MA_SUCCESS; }
-    virtual void whenInputSubmitted() {}
-    virtual void whenOutputSubmitted() {}   
-
+    virtual void whenInputSubmitted(const void* pData, ma_uint32 frameCount) {}
+    virtual void whenOutputSubmitted(void* pOut, ma_uint32 frameCount) {}
+    virtual void whenRenegotiated() {}
+     
     void renegotiate() {
         this->isNegociationDone = false;
+        this->whenRenegotiated();
 
         // Rebuild converters
         ma_result result = buildConverters();

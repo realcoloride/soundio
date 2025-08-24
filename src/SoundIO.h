@@ -18,7 +18,7 @@ constexpr int SOUNDIO_VERSION = 100;
 
 // mixer
 #include "./mixer/AudioCombiner.h"
-#include "./mixer/AudioPipe.h"
+// #include "./mixer/AudioPipe.h"
 #include "./mixer/AudioResampler.h"
 
 // output

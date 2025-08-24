@@ -2,7 +2,7 @@
 
 #include "./AudioEndpoint.h"
 
-class AudioStream : public AudioEndpoint {
+class AudioStream : public virtual AudioEndpoint {
 protected:
     AudioStream(const AudioFormat& fmt, bool isSource, bool isSink) {
         audioFormat = fmt;

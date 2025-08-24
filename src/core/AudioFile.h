@@ -1,52 +1,103 @@
 #pragma once
 
 #include "../core/AudioStream.h"
+#include "../include.h"
 
-class AudioFile : public AudioStream {
+class AudioFile : public virtual AudioEndpoint {
 protected:
     ma_decoder decoder;
     ma_encoder encoder;
     bool hasDecoder = false;
     bool hasEncoder = false;
+    std::string filePath;
 
-    AudioFile(bool isSource, bool isSink) : AudioStream(AudioFormat{}, isSource, isSink) {}
+public:
+    ma_result bufferStatus = MA_SUCCESS;
 
-    ma_result openDecoder(const std::string& filePath) {
-        if (hasDecoder) {
-            ma_decoder_uninit(&decoder);
-            hasDecoder = false;
-        }
+    AudioFile(bool isSource, bool isSink) : AudioEndpoint() {
+        bufferStatus = MA_SUCCESS;
 
-        ma_result result = ma_decoder_init_file(filePath.c_str(), nullptr, &decoder);
-        if (result == MA_SUCCESS) {
-            hasDecoder = true;
-            audioFormat.sampleRate = decoder.outputSampleRate;
-            audioFormat.channels = decoder.outputChannels;
-            audioFormat.format = decoder.outputFormat;
-            renegotiate();
-        }
+        audioFormat = AudioFormat();
+        canFillInputRing = isSink;
+        canDrainOutputRing = isSource;
+    }
+    
+    static ma_result checkDecode(const std::string& path) {
+        ma_decoder temporaryDecoder;
+        ma_result result = ma_decoder_init_file(path.c_str(), NULL, &temporaryDecoder);
+        ma_decoder_uninit(&temporaryDecoder);
         return result;
     }
 
-    ma_result openEncoder(const std::string& filePath, const AudioFormat& targetFormat) {
-        if (hasEncoder) {
-            ma_encoder_uninit(&encoder);
-            hasEncoder = false;
-        }
-
-        ma_encoder_config config = ma_encoder_config_init(
-            ma_encoding_format_wav,
-            targetFormat.toMaFormat(),
-            targetFormat.channels,
-            targetFormat.sampleRate
+    ma_result checkEncode(const std::string& path) const {
+        ma_encoder temporaryEncoder;
+        ma_encoder_config encoderConfig = ma_encoder_config_init(
+            audioFormat.encodingFormat, 
+            audioFormat.format, 
+            audioFormat.channels, 
+            audioFormat.sampleRate
         );
 
-        ma_result result = ma_encoder_init_file(filePath.c_str(), &config, &encoder);
+        ma_result result = ma_encoder_init_file(path.c_str(), NULL, &temporaryEncoder);
+        ma_encoder_uninit(&temporaryEncoder);
+        return result;
+    }
+
+    ma_result prepareOpen(const std::string& path, ma_result(*checkMethod)(const std::string&)) {
+        ma_result result = checkMethod(path);
+        
+        if (result == MA_SUCCESS) {
+            filePath = path;
+        }
+
+        return result;
+    }
+
+    ma_result openDecoder() {
+        closeDecoder();
+        bufferStatus = MA_SUCCESS;
+
+        ma_decoder_config* config = NULL;
+        if (this->isInputSubscribed()) {
+            auto* inputFormat = this->getInputFormat();
+            ma_decoder_config decoderConfig = ma_decoder_config_init(inputFormat->format, inputFormat->channels, inputFormat->sampleRate);
+            config = &decoderConfig;
+        }
+
+        ma_result result = ma_decoder_init_file(filePath.c_str(), NULL, &decoder);
+        if (result == MA_SUCCESS) {
+            hasDecoder = true;
+
+            audioFormat.format = decoder.outputFormat;
+            audioFormat.channels = decoder.outputChannels;
+            audioFormat.sampleRate = decoder.outputSampleRate;
+        }
+
+        bufferStatus = result;
+        return result;
+    }
+
+    ma_result openEncoder(const std::string& path, const AudioFormat& targetFormat) {
+        closeEncoder();
+        bufferStatus = MA_SUCCESS;
+
+        audioFormat = targetFormat;
+
+        ma_encoder_config config = ma_encoder_config_init(
+            audioFormat.encodingFormat,
+            audioFormat.format,
+            audioFormat.channels,
+            audioFormat.sampleRate
+        );
+
+        ma_result result = ma_encoder_init_file(path.c_str(), &config, &encoder);
         if (result == MA_SUCCESS) {
             hasEncoder = true;
-            audioFormat = targetFormat;
-            renegotiate();
+            filePath = path;
+            renegotiate(); 
         }
+
+        bufferStatus = result;
         return result;
     }
 
@@ -54,31 +105,51 @@ protected:
         if (hasDecoder) {
             ma_decoder_uninit(&decoder);
             hasDecoder = false;
+            filePath.clear();
         }
+        bufferStatus = MA_SUCCESS;
     }
 
     void closeEncoder() {
         if (hasEncoder) {
             ma_encoder_uninit(&encoder);
             hasEncoder = false;
+            filePath.clear();
         }
+        bufferStatus = MA_SUCCESS;
     }
 
-    ma_result readFromFile(void* pOut, ma_uint32 frameCount, ma_uint32* pFramesRead) {
-        if (!hasDecoder) return MA_DEVICE_NOT_INITIALIZED;
-        ma_uint64 framesRead;
-        ma_result result = ma_decoder_read_pcm_frames(&decoder, pOut, frameCount, &framesRead);
-        if (pFramesRead) *pFramesRead = (ma_uint32)framesRead;
+    ma_result readFromFile(void* pData, ma_uint32 frameCount, ma_uint32* framesRead) {
+        if (!hasDecoder) {
+            bufferStatus = MA_NO_DEVICE;
+            return MA_NO_DEVICE;
+        }
+
+        ma_uint64 framesRead64;
+        ma_result result = ma_decoder_read_pcm_frames(&decoder, pData, frameCount, &framesRead64);
+        *framesRead = (ma_uint32)framesRead64;
+
+        bufferStatus = result;
         return result;
     }
 
     ma_result writeToFile(const void* pData, ma_uint32 frameCount) {
-        if (!hasEncoder) return MA_DEVICE_NOT_INITIALIZED;
-        ma_uint64 framesWritten;
-        return ma_encoder_write_pcm_frames(&encoder, pData, frameCount, &framesWritten);
+        if (!hasEncoder) {
+            bufferStatus = MA_NO_DEVICE;
+            return MA_NO_DEVICE;
+        }
+
+        ma_result result = ma_encoder_write_pcm_frames(&encoder, pData, frameCount, nullptr);
+        bufferStatus = result;
+        return result;
     }
 
-public:
+    bool isDecoderOpen() const { return hasDecoder; }
+    bool isEncoderOpen() const { return hasEncoder; }
+    const std::string& getFilePath() const { return filePath; }
+    ma_result getBufferStatus() const { return bufferStatus; }
+    const AudioFormat& getFormat() const { return audioFormat; }
+
     virtual ~AudioFile() {
         closeDecoder();
         closeEncoder();

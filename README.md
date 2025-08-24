@@ -13,6 +13,7 @@ Works anywhere miniaudio works - from desktop to mobile to the web.
 
 # Features
 
+
 ### Remaining features
 
 #### File Features
@@ -51,6 +52,7 @@ QA + Testing and example scripts should be written.
 *__TL;DR:__ if its supported by miniaudio.h, it is supported by SoundIO.*
 
 # Installation
+
 
 
 # Usage

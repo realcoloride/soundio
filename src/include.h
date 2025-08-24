@@ -22,6 +22,7 @@
 #include <unordered_set>
 #include <algorithm>
 #include <cstring>
+#include <atomic>
 
 #ifndef SI_LOG
 #define SI_LOG(msg) do { \
