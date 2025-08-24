@@ -63,7 +63,7 @@ Not yet :v
 
 ### Other
 
-Shutting down, finishing the SoundIO.h class, cleaning up code, documenting methods,
+Shutting down, finishing the SoundIO.h class, cleaning up code, documenting methods, detecting properly when devices uninit (miniaudio is not properly handling this well)
 QA + Testing and example scripts should be written.
 
 </details>
@@ -130,11 +130,32 @@ Playing a file with playback
 
 ```
 
+> [!IMPORTANT]
+> To avoid wasting resources, devices are **not active by default**.  
+> You **must** wake up a device with `device->ensureAwake()` before using it.  
+> The default microphone and speaker are automatically woken up when you request them (this is optional, but enabled by default).
+
 Listing devices and getting their information
 ```cpp
-// by default, when getDefaultSpeaker or Microphone have an argument called autoWake defaulting to true that wakes up devices.
-// in order to avoid wasting resources, only wake up the devices using ensureAwake and sleep when you do not need them anymore.
+for (auto* device : SoundIO::getAllDevices()) {
+    // Device name / normalized id
+    std::cout << "Device: " << device->name << " (ID: " << device->id << ")\n";
 
+    // Device type
+    std::cout << "  Type: " << (device->deviceType == ma_device_type_playback ? "Speaker" : "Microphone") << "\n";
+
+    // Device channels
+    std::cout << "  Channels: " << device->deviceFormat.channels << "\n";
+
+    // Device sample rate
+    std::cout << "  Sample Rate: " << device->deviceFormat.sampleRate << "\n";
+
+    // Device format
+    std::cout << "  Format: " << device->deviceFormat.format << "\n";
+
+    // Is device default
+    if (device->isDefault) std::cout << "  [default]" << "\n";
+}
 ```
 
 Simple microphone to speaker loopback

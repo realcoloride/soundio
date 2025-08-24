@@ -18,7 +18,6 @@ constexpr int SOUNDIO_VERSION = 100;
 
 // mixer
 #include "./mixer/AudioCombiner.h"
-// #include "./mixer/AudioPipe.h"
 #include "./mixer/AudioResampler.h"
 
 // output
@@ -88,9 +87,30 @@ private:
     }
 
 public:
+    /// <summary>
+    /// Initializes SoundIO and devices.
+    /// </summary>
+    /// <returns>Initialization result</returns>
     static ma_result initialize();
+
+    /// <summary>
+    /// Shuts down SoundIO, releases devices and uninitializes contexts.
+    /// </summary>
+    /// <returns></returns>
     static ma_result shutdown() {
         if (!initialized) return MA_SUCCESS;
+
+        idToDevices.clear();
+        nodes.clear();
+        missingCount.clear();
+
+        ma_result result = ma_context_uninit(&context);
+
+        defaultMicrophoneId.clear();
+        defaultSpeakerId.clear();
+        initialized = false;
+
+        SI_LOG("SoundIO shutdown");
 
         return MA_SUCCESS;
     }
@@ -109,13 +129,26 @@ protected:
     }
 
 public:
+    /// <summary>
+    /// Forces a device list refresh
+    /// </summary>
+    /// <returns>Refresh result</returns>
     static ma_result refreshDevices();
 
+    /// <summary>
+    /// Gets a device by its normalized id
+    /// </summary>
+    /// <param name="id">Normalized device id</param>
+    /// <returns>Device if found, nullptr if not</returns>
     static AudioDevice* getDeviceById(const std::string& id) {
         auto it = idToDevices.find(id);
         return it != idToDevices.end() ? it->second.get() : nullptr;
     }
 
+    /// <summary>
+    /// Gets all current devices (input/output)
+    /// </summary>
+    /// <returns>A vector of the following devices</returns>
     static std::vector<AudioDevice*> getAllDevices() {
         std::vector<AudioDevice*> out;
         out.reserve(idToDevices.size());
@@ -124,6 +157,10 @@ public:
         return out;
     }
 
+    /// <summary>
+    /// Gets all current microphones (input devices)
+    /// </summary>
+    /// <returns>A vector of the following devices</returns>
     static std::vector<AudioMicrophoneDevice*> getAllMicrophones() {
         std::vector<AudioMicrophoneDevice*> out;
         out.reserve(idToDevices.size());
@@ -133,6 +170,10 @@ public:
         return out;
     }
 
+    /// <summary>
+    /// Gets all current speakers (output devices)
+    /// </summary>
+    /// <returns>A vector of the following devices</returns>
     static std::vector<AudioSpeakerDevice*> getAllSpeakers() {
         std::vector<AudioSpeakerDevice*> out;
         out.reserve(idToDevices.size());
@@ -142,29 +183,42 @@ public:
         return out;
     }
 
+    /// <summary>
+    /// Gets the default microphone/input device of this system
+    /// </summary>
+    /// <param name="autoWake">True by default, will wake up the device if found</param>
+    /// <returns>Device if found else nullptr</returns>
     static AudioMicrophoneDevice* getDefaultMicrophone(bool autoWake = true) {
         if (defaultMicrophoneId.empty())
             return nullptr;
 
-        auto* microphone = dynamic_cast<AudioMicrophoneDevice*>(getDeviceById(defaultMicrophoneId));
+        auto device = getDeviceById(defaultMicrophoneId);
+        if (!device) return nullptr;
+        
+        auto* microphone = dynamic_cast<AudioMicrophoneDevice*>(device);
         microphone->ensureAwake();
         return microphone;
     }
 
+    /// <summary>
+    /// Gets the default speaker/output device of this system
+    /// </summary>
+    /// <param name="autoWake">True by default, will wake up the device if found</param>
+    /// <returns>Device if found else nullptr</returns
     static AudioSpeakerDevice* getDefaultSpeaker(bool autoWake = true) {
         if (defaultSpeakerId.empty())
             return nullptr;
 
-        auto* speaker = dynamic_cast<AudioSpeakerDevice*>(getDeviceById(defaultSpeakerId));
+        auto device = getDeviceById(defaultSpeakerId);
+        if (!device) return nullptr;
+
+        auto* speaker = dynamic_cast<AudioSpeakerDevice*>(device);
         speaker->ensureAwake();
         return speaker;
     }
 
 protected:
     static inline std::vector<std::shared_ptr<AudioNode>> nodes;
-
-    // shared_ptr cleanup happens automatically
-    static void clearAllNodes() { nodes.clear(); }
 
     template <typename T, typename... Args>
     static T* registerNode(Args&&... args) {
@@ -195,9 +249,7 @@ public:
     static AudioResampler* createResampler(AudioFormat outputFormat, AudioInput* input = nullptr) {
 
     }
-    static AudioPipe* createPipe() {
-
-    }*/
+    */
 
     // output
     
@@ -241,15 +293,6 @@ inline ma_result SoundIO::refreshDevices() {
     ma_uint32 microphoneCount;
 
     SI_LOG("refreshDevices() called from:");
-    // Add a simple stack trace or debug info
-    #ifdef _WIN32
-        void* stack[10];
-        unsigned short frames = CaptureStackBackTrace(0, 10, stack, NULL);
-        for (unsigned short i = 0; i < frames; i++) {
-            SI_LOG("  Frame " << i << ": " << stack[i]);
-        }
-    #endif
-
 
     ma_context_get_devices(&context, &speakers, &speakerCount, &microphones, &microphoneCount);
     SI_LOG("refreshDevices: speakers=" << speakerCount << " mics=" << microphoneCount);
@@ -298,7 +341,6 @@ inline ma_result SoundIO::refreshDevices() {
 
     if (result != MA_SUCCESS) return result;
 
-
     for (auto& kv : idToDevices) {
         if (seenIds.count(kv.first) == 0)
             missingCount[kv.first]++;
@@ -307,13 +349,11 @@ inline ma_result SoundIO::refreshDevices() {
     }
 
     for (auto it = idToDevices.begin(); it != idToDevices.end(); ) {
-        if (missingCount[it->first] > 2) { // Only delete after 3 consecutive misses
+        if (missingCount[it->first] > 1) {
             missingCount.erase(it->first);
             it = idToDevices.erase(it);
         }
-        else {
-            ++it;
-        }
+        else ++it;
     }
 
     // update defaults
