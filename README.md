@@ -183,7 +183,7 @@ More examples are available [here](https://github.com/realcoloride/soundio/tree/
 
 🚀 If you have an issue or idea, let me know in the [**Issues**](https://github.com/realcoloride/soundio/issues) section.
 
-📜 If you use this library, you also bound by the terms of [`miniaudio.h`'s "MIT No Attribution" (MIT-0) license](https://github.com/aws/mit-0) and this library's [MIT LICENSE](LICENSE).
+📜 If you use this library, you also bound by the terms of [`miniaudio.h`'s license](https://github.com/aws/mit-0) and this library's [MIT license](LICENSE).
 
 ☕ **Want to support me?** You can send me a coffee on ko.fi: https://ko-fi.com/coloride.
 
