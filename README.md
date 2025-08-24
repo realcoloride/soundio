@@ -43,6 +43,7 @@ Not yet :v
 - [Specifications](#specifications)
 - [Installation](#installation)
 - [Usage](#usage)
+    - [Debugging](#debugging)
 - [Documentation](#documentation)
 - [Building](#building)
 - [Disclaimer](#disclaimer)
@@ -196,6 +197,15 @@ if (result == MA_SUCCESS)
 </details>
 
 _More detailed examples are available [here](https://github.com/realcoloride/soundio/tree/main/examples/)._
+
+
+### Debugging
+
+By default, SoundIO will remain silent and not print anything out because most methods return an `ma_result`, however using the following define statement will enable verbose debugging statements.
+
+```cpp
+#define SOUNDIO_LOG_ENABLED 1
+```
 
 # Documentation
 
