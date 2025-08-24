@@ -20,7 +20,9 @@ struct AudioFormat {
     ma_uint32 frameSizeInBytes(ma_uint32 frames = 1) const {
         return frames * (ma_uint32)(channels * ma_get_bytes_per_sample(format));
     }
-
+    ma_uint32 framesToMs(ma_uint32 frames) const { return (frames * 1000) / sampleRate; }
+    ma_uint32 msToFrames(ma_uint32 ms) const { return (ms * sampleRate) / 1000; }
+    
     static AudioFormat Stereo48kF32() { return { ma_format_f32, 2, 48000 }; }
 
     bool operator==(const AudioFormat& o) const {

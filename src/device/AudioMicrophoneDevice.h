@@ -19,6 +19,6 @@ public:
         : AudioDevice(id, context)
     {
         canFillInputRing = true;
-        canDrainOutputRing = true; // so downstream can pull
+        canDrainOutputRing = true;
     }
 };

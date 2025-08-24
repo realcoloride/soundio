@@ -5,8 +5,11 @@
 
 class AudioStreamInput : public AudioStream, public virtual AudioInput {
 public:
+    using AudioEndpoint::getAvailableWriteFrames;
+
     AudioStreamInput(const AudioFormat& format) : AudioStream(format, true, false) {}
-    void submitPCM(const void* pData, ma_uint32 frameCount) { 
-        pushToOutputRing(pData, frameCount); 
+    void submitPCM(const void* pData, ma_uint32 frameCount) {
+        if (!canDrainOutputRing) return;
+        pushToOutputRing(pData, frameCount);
     }
 };

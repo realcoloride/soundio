@@ -24,12 +24,14 @@
 #include <cstring>
 #include <atomic>
 
-#ifndef SI_LOG
-#define SI_LOG(msg) do { \
-    std::ostringstream _si_oss; \
-    _si_oss << "[SI] [" << std::this_thread::get_id() << "] " << msg; \
-    std::cout << _si_oss.str() << std::endl; \
-} while(0)
+#ifndef SOUNDIO_LOG_ENABLED
+	#define SOUNDIO_LOG_ENABLED 0
+#endif
+
+#if SOUNDIO_LOG_ENABLED
+	#define SI_LOG(msg) do { std::cout << "[SI] " << msg << std::endl; } while(0)
+#else
+	#define SI_LOG(msg) do {} while(0)
 #endif
 
 #endif // INCLUDE_H

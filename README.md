@@ -63,7 +63,8 @@ Not yet :v
 
 ### Other
 
-Shutting down, finishing the SoundIO.h class, cleaning up code, documenting methods, detecting properly when devices uninit (miniaudio is not properly handling this well)
+Shutting down, finishing the SoundIO.h class, cleaning up code, documenting methods, detecting properly when devices uninit (miniaudio is not properly handling this well), making debugging optional
+Better building script
 QA + Testing and example scripts should be written.
 
 </details>
@@ -133,12 +134,12 @@ if (result == MA_SUCCESS)
 ```
 </details>
 
-<details><summary>Listing devices and getting their information</summary>
-
 > [!IMPORTANT]
 > To avoid wasting resources, devices are **not active by default**.  
 > You **must** wake up a device with `device->ensureAwake()` before using it.  
 > The default microphone and speaker are automatically woken up when you request them (this is optional, but enabled by default).
+
+<details><summary>Listing devices and getting their information</summary>
 
 ```cpp
 for (auto* device : SoundIO::getAllDevices()) {
@@ -194,7 +195,7 @@ if (result == MA_SUCCESS)
 ```
 </details>
 
-More examples are available [here](https://github.com/realcoloride/soundio/tree/main/examples/).
+_More detailed examples are available [here](https://github.com/realcoloride/soundio/tree/main/examples/)._
 
 # Documentation
 

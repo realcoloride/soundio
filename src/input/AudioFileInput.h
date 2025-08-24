@@ -21,10 +21,7 @@ protected:
     void whenRenegotiated() override { openDecoder(); }
 
 public:
-    AudioFileInput() : AudioFile(true, false) {
-        canFillInputRing = true;
-        canDrainOutputRing = true;
-    }
+    AudioFileInput() : AudioFile(true, true) {}
 
     ma_result open(const std::string& filePath) { return prepareOpen(filePath, &checkDecode); }
     void close() { closeDecoder(); }

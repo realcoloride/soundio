@@ -146,6 +146,8 @@ protected:
 
     // Write to a ring buffer using acquire/commit
     void writeRing(ma_pcm_rb& rb, const AudioFormat& fmt, const void* pData, ma_uint32 frames) {
+        if (fmt.sampleRate == 0) return;
+
         ma_uint32 framesToWrite = frames;
         while (framesToWrite > 0) {
             void* pDst = nullptr;
@@ -244,6 +246,10 @@ protected:
         return handleMixPCM(MA_SUCCESS);
     }
 
+    ma_uint32 getAvailableWriteFrames() {
+        return ma_pcm_rb_available_write(&outputRing);
+    }
+
     ma_result handleInputSubscribe(AudioNode*) override { renegotiate(); return MA_SUCCESS; }
     ma_result handleOutputSubscribe(AudioNode*) override { renegotiate(); return MA_SUCCESS; }
     ma_result handleInputUnsubscribe(AudioNode*) override { renegotiate(); return MA_SUCCESS; }
@@ -282,6 +288,9 @@ public:
     /// Default is 50 ms.
     /// </summary>
     ma_uint32 bufferSafetyMS = 50;
+
+    ma_uint32 getInputRingFrames() const { return inputRingFrames; }
+    ma_uint32 getOutputRingFrames() const { return outputRingFrames; }
 
     virtual ~AudioEndpoint() {
         if (hasInputToSelfConverter) ma_data_converter_uninit(&inputToSelfConverter, nullptr);
