@@ -11,6 +11,10 @@ public:
     ma_result subscribe(AudioInput* source);
     ma_result unsubscribe() { return unsubscribeInput(); }
 
+    ma_uint32 getAvailableReadFrames() {
+        return getRingAvailableRead(&inputRing);
+    }
+
     virtual ~AudioOutput() = default;
 };
 

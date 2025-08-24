@@ -246,8 +246,11 @@ protected:
         return handleMixPCM(MA_SUCCESS);
     }
 
-    ma_uint32 getAvailableWriteFrames() {
-        return ma_pcm_rb_available_write(&outputRing);
+    ma_uint32 getRingAvailableRead(ma_pcm_rb* ring) {
+        return ma_pcm_rb_available_read(ring);
+    }
+    ma_uint32 getRingAvailableWrite(ma_pcm_rb* ring) {
+        return ma_pcm_rb_available_write(ring);
     }
 
     ma_result handleInputSubscribe(AudioNode*) override { renegotiate(); return MA_SUCCESS; }

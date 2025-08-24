@@ -13,6 +13,10 @@ public:
     ma_result unsubscribe() { return unsubscribeOutput(); }
 
     virtual ~AudioInput() = default;
+    
+    ma_uint32 getAvailableWriteFrames() {
+        return getRingAvailableWrite(&outputRing);
+    }
 };
 
 inline ma_result AudioInput::subscribe(AudioOutput* destination) {

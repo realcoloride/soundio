@@ -1,9 +1,19 @@
+// SoundIO - Sine wave example
+// Copyright (c) 2025 - (real)Coloride
+// https://github.com/realcoloride/soundio
+// 
+// This example demonstrates generating a sine wave with SoundIO (MIT).
+// Powered by miniaudio (https:://miniaud.io)
+
 #include <SoundIO.h>
 #include <cmath>
 #include <vector>
 #include <thread>
 #include <iostream>
-#define M_PI 3.14159265358979323846f
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846f
+#endif
 
 // audio parameters
 const float duration = 10.0f; // duration of the sine wave
@@ -18,9 +28,13 @@ int main() {
     // init SoundIO
     SoundIO::initialize();
 
-    // get speaker & format
-    // this assumes you have atleast one speaker
+    // get speaker (default) & format
     auto* spk = SoundIO::getDefaultSpeaker();
+    if (!spk) {
+        std::cerr << "Error: No default speaker found!" << std::endl;
+        SoundIO::shutdown();
+        return 1;
+    }
 
     // the following example is format agnostic;
     // but i prefer still taking the device's native format

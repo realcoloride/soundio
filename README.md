@@ -196,6 +196,12 @@ if (result == MA_SUCCESS)
 ```
 </details>
 
+<details><summary>Generating and playing back a sine wave stream</summary>
+
+_See [sin_wave.cpp](https://github.com/realcoloride/soundio/tree/main/examples/sin_wave.cpp)._
+
+</details>
+
 _More detailed examples are available [here](https://github.com/realcoloride/soundio/tree/main/examples/)._
 
 
