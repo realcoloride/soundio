@@ -164,6 +164,7 @@ for (auto* device : SoundIO::getAllDevices()) {
 </details>
 
 <details><summary>Simple microphone to speaker loopback</summary>
+
 ```cpp
 // get default microphone and speaker
 auto* microphone = SoundIO::getDefaultMicrophone();
@@ -176,6 +177,7 @@ microphone->subscribe(speaker);
 </details>
 
 <details><summary>Recording microphone data to a file</summary>
+
 ```cpp
 // get default microphone
 auto* microphone = SoundIO::getDefaultMicrophone();
