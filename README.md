@@ -108,7 +108,7 @@ ma_result result = SoundIO::shutdown();
 > [!WARNING]
 > To create SoundIO instances, it is **required** that you use `SoundIO::create*` because their memory management will be handled by SoundIO.
 
-Playing a file
+<details><summary>Playing a file</summary>
 
 ```cpp
 // get default speaker
@@ -124,18 +124,22 @@ if (result == MA_SUCCESS)
     file->subscribe(speaker);
 
 ```
+</details>
 
-Playing a file with playback
+<details><summary>Playing a file with playback</summary>
+
 ```cpp
 
 ```
+</details>
+
+<details><summary>Listing devices and getting their information</summary>
 
 > [!IMPORTANT]
 > To avoid wasting resources, devices are **not active by default**.  
 > You **must** wake up a device with `device->ensureAwake()` before using it.  
 > The default microphone and speaker are automatically woken up when you request them (this is optional, but enabled by default).
 
-Listing devices and getting their information
 ```cpp
 for (auto* device : SoundIO::getAllDevices()) {
     // Device name / normalized id
@@ -157,8 +161,9 @@ for (auto* device : SoundIO::getAllDevices()) {
     if (device->isDefault) std::cout << "  [default]" << "\n";
 }
 ```
+</details>
 
-Simple microphone to speaker loopback
+<details><summary>Simple microphone to speaker loopback</summary>
 ```cpp
 // get default microphone and speaker
 auto* microphone = SoundIO::getDefaultMicrophone();
@@ -168,23 +173,24 @@ auto* speaker = SoundIO::getDefaultSpeaker();
 // resampling and format negociation is automatically handled by SoundIO.
 microphone->subscribe(speaker);
 ```
+</details>
 
-Recording microphone data to a file
+<details><summary>Recording microphone data to a file</summary>
 ```cpp
 // get default microphone
 auto* microphone = SoundIO::getDefaultMicrophone();
 
 // create a file input, and open the file
 // format IS required (mp3, wav, pcm etc)
-// for the sake of simplicity, we take the mic's default PCM format (.pcm).
 auto* file = SoundIO::createFileOutput();
-ma_result result = file->open("recording.pcm", mic->deviceFormat);
+ma_result result = file->open("recording.wav", mic->deviceFormat);
 
 // if the file was successfully loaded
 if (result == MA_SUCCESS) 
     // the output of the microphone will be saved to the file automatically.
     microphone->subscribe(file);
 ```
+</details>
 
 More examples are available [here](https://github.com/realcoloride/soundio/tree/main/examples/).
 
