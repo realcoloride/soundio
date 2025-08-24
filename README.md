@@ -7,11 +7,11 @@
 [![License](https://img.shields.io/badge/MIT-green?style=for-the-badge
 )](LICENSE) 
 
-**SoundIO** (**Sound** **I**nput/**O**utput) is a header-only, cross-platform, high-level audio library for C++ built on top of miniaudio.
+**SoundIO** (**Sound** **I**nput/**O**utput) is a header-only, cross-platform, high-level audio library for C++ built on top of [miniaudio](https://miniaud.io).
 
 It gives you a **node-based** audio graph abstraction so you can connect audio inputs, outputs, files and manage playback without worrying about low-level device handling, memory safety, or backend quirks for those who want to work with audio quickly and easily.
 
-Works anywhere miniaudio works - from desktop to mobile to the web;
+Works anywhere [miniaudio](https://miniaud.io) works - from desktop to mobile to the web;
 
 ***Because simple audio shouldn't be such a headache.***
 
@@ -23,12 +23,12 @@ Not yet :v
 
 - **Header-only**, modern `C++17+`, no extra library required
 - **Extremely simple API**, node-based graph, subscription based calls
-- **Low memory footprint and low overhead**, simply wrapping miniaudio
+- **Low memory footprint and low overhead**, simply wrapping [miniaudio](https://miniaud.io)
 - **Format negociation built-in**, no need to resample or convert between inputs and outputs
 - **Supports for input and output devices**, microphones and speakers, for all platforms are built in, with ability to fetch them with a normalized id for all platforms
 - **File playback and recording**, (WAV, MP3, OGG, PCM) - support for the following formats are out of the box
 - **Mixing, combining, resampling, playback**, built-in for complex but easy-to-use audio manipulation
-- **Runs anywhere miniaudio runs**: Windows, macOS, Linux, Android, iOS, Web _(see supported backends below)_
+- **Runs anywhere [miniaudio](https://miniaud.io) runs**: Windows, macOS, Linux, Android, iOS, Web _(see supported backends below)_
 
 # Table of contents
 - [SoundIO](#soundio)
@@ -85,7 +85,7 @@ QA + Testing and example scripts should be written.
 |**Android**|AAudio, OpenSL/ES|
 |**Web**|Emscripten, WebAudio|
 
-*__TL;DR:__ if its supported by miniaudio.h, it is supported by SoundIO.*
+*__TL;DR:__ if its supported by [miniaudio](https://miniaud.io), it is supported by SoundIO.*
 
 # Installation
 
