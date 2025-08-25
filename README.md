@@ -63,7 +63,7 @@ Not yet :v
 
 ### Other
 
-Shutting down, finishing the SoundIO.h class, cleaning up code, documenting methods, detecting properly when devices uninit (miniaudio is not properly handling this well), making debugging optional
+Finishing the SoundIO.h class, cleaning up code, documenting methods, detecting properly when devices uninit (miniaudio is not properly handling this well), making debugging optional
 Better building script
 QA + Testing and example scripts should be written.
 
