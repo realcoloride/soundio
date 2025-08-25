@@ -196,7 +196,7 @@ if (result == MA_SUCCESS)
 </details>
 
 > [!NOTE]
-> **Resampling and format conversion and normalization is automatically done and negociated by default.** That means unless specifically set; the input will always match the output format without audio degradation.
+> **Resampling, format conversion, negociation and normalization are automatically done and handled by the library.** That means unless specifically set; the input will always match the output format without audio degradation.
 
 <details><summary>Resampling and converting a file</summary>
 
