@@ -23,7 +23,9 @@ protected:
 public:
     AudioFileInput() : AudioFile(true, true) {}
 
-    ma_result open(const std::string& filePath) { return prepareOpen(filePath, &checkDecode); }
+    ma_result open(const std::string& path) { return openFileDecode(path); }
     void close() { closeDecoder(); }
     bool isOpen() const { return isDecoderOpen(); }
+
+    bool isFinished() const { return isInputFinished; }
 };

@@ -27,15 +27,16 @@ protected:
     }
 
 public:
-    AudioFileOutput() : AudioFile(false, true) {}
+    AudioFileOutput() : AudioFile(true, true) {}
 
-    ma_result open(const std::string& filePath, const AudioFormat& targetFormat) {
-        return openEncoder(filePath, targetFormat);
+    ma_result open(
+        const std::string& path, 
+        const AudioFormat& targetFormat, 
+        ma_encoding_format targetEncodingFormat = ma_encoding_format_unknown
+    ) {
+        return openFileEncode(path, targetFormat, targetEncodingFormat);
     }
 
-    void close() {
-        closeEncoder();
-    }
-
+    void close() { closeEncoder(); }
     bool isOpen() const { return isEncoderOpen(); }
 };

@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstring>
 #include <atomic>
+#include <filesystem>
 
 #ifndef SOUNDIO_LOG_ENABLED
 	#define SOUNDIO_LOG_ENABLED 0

@@ -57,7 +57,6 @@ Not yet :v
 ### Mixing Features
 * `AudioMixer.h` - Base class for mixing PCM audio
 * `AudioCombiner.h` - Combines multiple inputs into a single mixed output
-* `AudioResampler.h` - Resamples an input into 
 
 ### Playback
 * `AudioPlayer.h` - Manages the playback of an input into the output
@@ -193,6 +192,34 @@ ma_result result = file->open("recording.wav", mic->deviceFormat);
 if (result == MA_SUCCESS) 
     // the output of the microphone will be saved to the file automatically.
     microphone->subscribe(file);
+```
+</details>
+
+> [!NOTE]
+> **Resampling and format conversion and normalization is automatically done and negociated by default.** That means unless specifically set; the input will always match the output format without audio degradation.
+
+<details><summary>Resampling and converting a file</summary>
+
+```cpp
+// get the mp3 sample
+auto* mp3Sample = SoundIO::createFileInput();
+mp3Sample->open("sample.mp3");
+
+// create the wav sample
+auto* wavSample = SoundIO::createFileOutput();
+wavSample->open("sample.wav", mp3sample->format);
+
+// this will start draining
+mp3Sample->subscribe(wavSample);
+
+// keep converting until finished 
+// (the input is DRAINED by the output here)
+while (!mp3Sample->isFinished())
+    std::this_thread::yield();
+
+// close files
+mp3Sample->close();
+wavSample->close();
 ```
 </details>
 

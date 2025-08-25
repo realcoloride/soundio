@@ -18,7 +18,6 @@ constexpr int SOUNDIO_VERSION = 100;
 
 // mixer
 #include "./mixer/AudioCombiner.h"
-#include "./mixer/AudioResampler.h"
 
 // output
 #include "./output/AudioFileOutput.h"
@@ -245,9 +244,6 @@ public:
     // mixer
     /*static AudioCombiner* createCombiner(AudioInput* input = nullptr, AudioOutput* device = nullptr) {
         
-    }
-    static AudioResampler* createResampler(AudioFormat outputFormat, AudioInput* input = nullptr) {
-
     }
     */
 

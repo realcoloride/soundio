@@ -3,10 +3,9 @@
 #include "../include.h"
 
 struct AudioFormat {
-    ma_encoding_format encodingFormat = ma_encoding_format_unknown;
-    ma_format  format = ma_format_f32;
-    ma_uint32  channels = 2;
-    ma_uint32  sampleRate = 48000;
+    ma_format format = ma_format_f32;
+    ma_uint32 channels = 2;
+    ma_uint32 sampleRate = 48000;
 
     AudioFormat(ma_format format, ma_uint32 channels, ma_uint32 sampleRate) {
         this->format = format;
