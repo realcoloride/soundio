@@ -1,7 +1,7 @@
 # SoundIO
 
 > [!WARNING]
-> 🔨 Work in progress
+> 🔨 Work in progress - almost done!
 
 ![C++](https://img.shields.io/badge/C%2B%2B-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
 [![License](https://img.shields.io/badge/MIT-green?style=for-the-badge
