@@ -15,6 +15,8 @@ Works anywhere [miniaudio](https://miniaud.io) works - from desktop to mobile to
 
 ***Because simple audio shouldn't be such a headache.***
 
+*Note: this library should not be confused with `libsound.io`.*
+
 # Demo
 
 Not yet :v
@@ -24,8 +26,8 @@ Not yet :v
 - **Header-only**, modern `C++17+`, no extra library required
 - **Extremely simple API**, node-based graph, subscription based calls
 - **Low memory footprint and low overhead**, simply wrapping [miniaudio](https://miniaud.io)
-- **Format negociation built-in**, no need to resample or convert between inputs and outputs
-- **Supports for input and output devices**, microphones and speakers, for all platforms are built in, with ability to fetch them with a normalized id for all platforms
+- **Format negotiation built-in**, no need to resample or convert between inputs and outputs
+- **Support for input and output devices**, microphones and speakers, for all platforms are built in, with ability to fetch them with a normalized id for all platforms
 - **File playback and recording**, (WAV, MP3, OGG, PCM) - support for the following formats are out of the box
 - **Mixing, combining, resampling, playback**, built-in for complex but easy-to-use audio manipulation
 - **Runs anywhere [miniaudio](https://miniaud.io) runs**: Windows, macOS, Linux, Android, iOS, Web _(see supported backends below)_
@@ -55,6 +57,7 @@ Not yet :v
 * `AudioFileOutput.h` - Exports file data
 
 ### Mixing Features
+* `AudioAnalyzer.h` - Basic audio analyzer
 * `AudioMixer.h` - Base class for mixing PCM audio
 * `AudioCombiner.h` - Combines multiple inputs into a single mixed output
 
@@ -90,11 +93,17 @@ QA + Testing and example scripts should be written.
 
 # Installation
 
+To install SoundIO, you simply need to acquire the [latest release zip](https://github.com/realcoloride/soundio/releases) and extract the zip into your project where you wish to use SoundIO.
+
 # Usage
 
 To use SoundIO, simply include the header file.
 ```cpp
 #include <SoundIO.h>
+```
+or
+```cpp
+#include "path/to/SoundIO/SoundIO.h"
 ```
 
 Initialize and shutting down SoundIO:
@@ -172,7 +181,7 @@ auto* microphone = SoundIO::getDefaultMicrophone();
 auto* speaker = SoundIO::getDefaultSpeaker();
 
 // initialize loopback.
-// resampling and format negociation is automatically handled by SoundIO.
+// resampling and format negotiation is automatically handled by SoundIO.
 microphone->subscribe(speaker);
 ```
 </details>
@@ -196,7 +205,7 @@ if (result == MA_SUCCESS)
 </details>
 
 > [!NOTE]
-> **Resampling, format conversion, negociation and normalization are automatically done and handled by the library.** That means unless specifically set; the input will always match the output format without audio degradation.
+> **Resampling, format conversion, negotiation and normalization are automatically done and handled by the library.** That means unless specifically set; the input will always match the output format without audio degradation.
 
 <details><summary>Resampling and converting a file</summary>
 
@@ -251,7 +260,11 @@ By default, SoundIO will remain silent and not print anything out because most m
 
 # Building
 
+**You do not need to compile or build anything here.**
 
+For convenience, the [`build.py`](https://github.com/realcoloride/soundio/blob/main/build.py) packs the `/src/` folder into a neat `SoundIO_Release_xxx.zip` file for release.
+
+Since this is a header-only library, you do not need to compile or build anything, you just need to `#include` the entry `SoundIO.h` file.
 
 # Disclaimer
 
