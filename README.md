@@ -15,7 +15,7 @@ Works anywhere [miniaudio](https://miniaud.io) works - from desktop to mobile to
 
 ***Because simple audio shouldn't be such a headache.***
 
-*Note: this library should not be confused with `libsound.io`.*
+*Note: this library should not be confused with the C library `libsoundio`.*
 
 # Demo
 
