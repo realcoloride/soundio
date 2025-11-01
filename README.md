@@ -249,6 +249,8 @@ By default, SoundIO will remain silent and not print anything out because most m
 #define SOUNDIO_LOG_ENABLED 1
 ```
 
+Because SoundIO does not rely on any MSVC project or build system and it is purely code in header files, to test & develop for SoundIO.h, it is recommended you use a blank C++ project and link include files into your project.
+
 # Documentation
 
 <details> <summary>Click here to see the full documentation</summary>
@@ -262,9 +264,11 @@ By default, SoundIO will remain silent and not print anything out because most m
 
 **You do not need to compile or build anything here.**
 
-For convenience, the [`build.py`](https://github.com/realcoloride/soundio/blob/main/build.py) packs the `/src/` folder into a neat `SoundIO_Release_xxx.zip` file for release.
+For convenience, the [`build.py`](https://github.com/realcoloride/soundio/blob/main/build.py) script packs the `/src/` folder into a neat `SoundIO_Release_xxx.zip` file for release.
 
 Since this is a header-only library, you do not need to compile or build anything, you just need to `#include` the entry `SoundIO.h` file.
+
+To use the script, simply use `python build.py` (or command equivalent).
 
 # Disclaimer
 
